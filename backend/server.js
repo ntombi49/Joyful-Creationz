@@ -1,17 +1,18 @@
 const express = require("express");
-const cors = require("cors");
-const db = require("./db");
-
 const app = express();
-const PORT = 3000;
 
-app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Joyful Creationz API is running");
-});
+const userRoutes = require("./routes/users");
+const productRoutes = require("./routes/products");
+const orderRoutes = require("./routes/orders");
+const eventRoutes = require("./routes/events");
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.use("/users", userRoutes);
+app.use("/products", productRoutes);
+app.use("/orders", orderRoutes);
+app.use("/events", eventRoutes);
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
 });
