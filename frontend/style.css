@@ -9,12 +9,13 @@ header {
   margin-bottom: 20px;
 }
 
-#events div {
+#events div,
+#admin-section {
   background-color: #fff;
   padding: 15px;
   margin-bottom: 15px;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 button {
@@ -28,4 +29,32 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+/* admin form */
+#eventForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#eventForm input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#adminButton {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  float: right;
+  margin-right: 20px;
+}
+
+#adminButton:hover {
+  background-color: #218838;
 }

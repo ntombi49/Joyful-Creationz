@@ -1,21 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Joyful Creationz Events</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header>
-    <h1>Joyful Creationz Events</h1>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Joyful Creationz Events</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Joyful Creationz Events</h1>
+      <button
+        id="adminToggle"
+        style="
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          padding: 10px 20px;
+          background-color: #333;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        "
+      >
+        Admin Panel
+      </button>
+    </header>
 
-  <main>
-    <div id="events">
-      <!-- Events will load here -->
-    </div>
-  </main>
+    <main>
+      <section id="events-section">
+        <h2>Available Events</h2>
+        <div id="events">
+          <!-- Events will load here -->
+        </div>
+      </section>
 
-  <script src="app.js"></script>
-</body>
+      <section id="admin-section" style="display: none">
+        <h2>Admin Panel: Add Event</h2>
+        <form id="eventForm">
+          <input type="text" id="name" placeholder="Event Name" required />
+          <input type="text" id="description" placeholder="Description" />
+          <input type="date" id="date" required />
+          <input type="text" id="location" placeholder="Location" />
+          <button type="submit">Add Event</button>
+        </form>
+        <div id="adminMessage"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
 </html>
