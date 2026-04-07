@@ -1,29 +1,54 @@
-# Joyful-Creationz
+﻿# Joyful Creationz
 
+A simple event management app with registration, admin controls, and CSV export.
 
+## What was added
 
+- Frontend registration form with validation
+- Admin login to add, edit, and delete events
+- Registration management with remove option
+- CSV export for registrations
+- Friendly messages and polished UI
+- Backend validation and error handling
+- Static frontend served from the backend for easier local deployment
 
+## Run locally
 
-Step 5 — Create the Events Table
-This will allow your website to manage events and registrations.
+1. Install dependencies:
 
-Fields may include:
+```bash
+cd backend
+npm install
+```
 
-event id
+2. Start the backend and frontend together:
 
-event name
+```bash
+npm start
+```
 
-description
+3. Open the app in your browser:
 
-event date
+```text
+http://localhost:3000
+```
 
-location
+## Admin access
 
-This can later power things like:
+- Click the **Admin Panel** button
+- Enter the password: `joyful123`
 
-church events
+## Deploy locally on your network
 
-community events
+If you want to test from another device on the same network, open the browser on that device and visit:
 
-hiking events
+```text
+http://<your-machine-ip>:3000
+```
 
+Make sure your computer's firewall allows incoming traffic on port `3000`.
+
+## Notes
+
+- All event and registration validations happen on both frontend and backend.
+- CSV exports are generated from the backend at `/registrations/export`.

@@ -2,50 +2,156 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Joyful Creationz Events</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header>
-      <h1>Joyful Creationz Events</h1>
-      <button
-        id="adminToggle"
-        style="
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          padding: 10px 20px;
-          background-color: #333;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-        "
-      >
-        Admin Panel
-      </button>
-    </header>
-
-    <main>
-      <section id="events-section">
-        <h2>Available Events</h2>
-        <div id="events">
-          <!-- Events will load here -->
+    <div class="page-shell">
+      <header>
+        <div>
+          <h1>Joyful Creationz</h1>
+          <p class="subtitle">
+            Discover events, register with confidence, and manage registrations
+            from one friendly dashboard.
+          </p>
         </div>
-      </section>
+        <button id="adminToggle" class="primary-btn">Admin Panel</button>
+      </header>
 
-      <section id="admin-section" style="display: none">
-        <h2>Admin Panel: Add Event</h2>
-        <form id="eventForm">
-          <input type="text" id="name" placeholder="Event Name" required />
-          <input type="text" id="description" placeholder="Description" />
-          <input type="date" id="date" required />
-          <input type="text" id="location" placeholder="Location" />
-          <button type="submit">Add Event</button>
+      <div id="mainMessage" class="message hidden"></div>
+
+      <main>
+        <section id="events-section" class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Upcoming Events</h2>
+              <p class="panel-subtitle">
+                Reserve your spot before seats fill up.
+              </p>
+            </div>
+          </div>
+          <div id="events" class="card-grid"></div>
+        </section>
+
+        <section id="admin-section" class="panel hidden">
+          <div class="panel-heading admin-heading">
+            <div>
+              <h2>Admin Dashboard</h2>
+              <p class="panel-subtitle">
+                Add, edit, remove events or export registration records.
+              </p>
+            </div>
+            <div class="admin-actions">
+              <button
+                id="refreshRegistrations"
+                class="secondary-btn"
+                type="button"
+              >
+                Refresh
+              </button>
+              <button id="exportCsv" class="secondary-btn" type="button">
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div id="adminMessage" class="message hidden"></div>
+
+          <form id="eventForm" class="form-grid">
+            <input type="hidden" id="eventId" />
+            <label>
+              Event Name
+              <input type="text" id="name" placeholder="Event Name" required />
+            </label>
+            <label>
+              Location
+              <input
+                type="text"
+                id="location"
+                placeholder="Location"
+                required
+              />
+            </label>
+            <label>
+              Date
+              <input type="date" id="date" required />
+            </label>
+            <label class="full-width">
+              Description
+              <textarea
+                id="description"
+                rows="3"
+                placeholder="Short event description"
+              ></textarea>
+            </label>
+            <div class="form-actions full-width">
+              <button type="submit" class="primary-btn">Save Event</button>
+              <button
+                type="button"
+                id="cancelEdit"
+                class="secondary-btn hidden"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+
+          <section id="registrations-section" class="panel compact-panel">
+            <h3>Registrations</h3>
+            <div id="registrations" class="card-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="registrationModal" class="modal hidden">
+      <div class="modal-card">
+        <button id="closeRegistrationModal" class="modal-close" type="button">
+          ×
+        </button>
+        <h2>Register for <span id="modalEventTitle"></span></h2>
+        <div id="modalMessage" class="message hidden"></div>
+        <form id="registerForm" class="form-grid">
+          <input type="hidden" id="modalEventId" />
+          <label>
+            Your Name
+            <input
+              type="text"
+              id="registerName"
+              placeholder="Full Name"
+              required
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              id="registerEmail"
+              placeholder="name@example.com"
+              required
+            />
+          </label>
+          <label>
+            Phone
+            <input
+              type="tel"
+              id="registerPhone"
+              placeholder="123-456-7890"
+              required
+            />
+          </label>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-btn">
+              Submit Registration
+            </button>
+            <button type="button" id="cancelRegistration" class="secondary-btn">
+              Cancel
+            </button>
+          </div>
         </form>
-        <div id="adminMessage"></div>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <script src="app.js"></script>
   </body>
