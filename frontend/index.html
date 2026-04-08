@@ -39,7 +39,8 @@
             <div>
               <h2>Admin Dashboard</h2>
               <p class="panel-subtitle">
-                Add, edit, remove events or export registration records.
+                Add, edit, remove events and products or export registration
+                records.
               </p>
             </div>
             <div class="admin-actions">
@@ -96,6 +97,56 @@
               </button>
             </div>
           </form>
+
+          <form id="productForm" class="form-grid">
+            <input type="hidden" id="productId" />
+            <label>
+              Product Name
+              <input
+                type="text"
+                id="productName"
+                placeholder="Product Name"
+                required
+              />
+            </label>
+            <label>
+              Price
+              <input
+                type="number"
+                id="productPrice"
+                placeholder="Price"
+                step="0.01"
+                required
+              />
+            </label>
+            <label>
+              Image URL
+              <input type="url" id="productImage" placeholder="Image URL" />
+            </label>
+            <label class="full-width">
+              Description
+              <textarea
+                id="productDescription"
+                rows="3"
+                placeholder="Product description"
+              ></textarea>
+            </label>
+            <div class="form-actions full-width">
+              <button type="submit" class="primary-btn">Save Product</button>
+              <button
+                type="button"
+                id="cancelProductEdit"
+                class="secondary-btn hidden"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+
+          <section id="products-section" class="panel compact-panel">
+            <h3>Products</h3>
+            <div id="products" class="card-grid"></div>
+          </section>
 
           <section id="registrations-section" class="panel compact-panel">
             <h3>Registrations</h3>

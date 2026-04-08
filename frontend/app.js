@@ -50,6 +50,7 @@ function setAdminMode(enabled) {
   loadEvents();
   if (enabled) {
     loadRegistrations();
+    loadProducts();
   }
 }
 
@@ -58,7 +59,7 @@ async function loadEvents() {
   eventsDiv.innerHTML = "<p class='status-message'>Loading events...</p>";
 
   try {
-    const res = await fetch(`${baseUrl}/events`);
+    const res = await fetch(`${baseUrl}/api/events`);
     if (!res.ok) {
       throw new Error("Failed to fetch events");
     }
@@ -165,7 +166,7 @@ async function submitRegistration(event) {
   }
 
   try {
-    const res = await fetch(`${baseUrl}/register`, {
+    const res = await fetch(`${baseUrl}/api/registrations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ event_id: Number(eventId), name, email, phone }),
@@ -237,8 +238,8 @@ async function submitEventForm(e) {
 
   const payload = { name, date, location, description };
   const url = currentEditEventId
-    ? `${baseUrl}/events/${currentEditEventId}`
-    : `${baseUrl}/events`;
+    ? `${baseUrl}/api/events/${currentEditEventId}`
+    : `${baseUrl}/api/events`;
   const method = currentEditEventId ? "PUT" : "POST";
 
   try {
@@ -266,33 +267,179 @@ async function submitEventForm(e) {
   }
 }
 
-async function deleteEvent(eventId) {
-  const confirmed = confirm(
-    "Delete this event and all registrations for it? This cannot be undone.",
-  );
-  if (!confirmed) return;
+async function loadProducts() {
+  const productsDiv = document.getElementById("products");
+  productsDiv.innerHTML = "<p class='status-message'>Loading products...</p>";
 
   try {
-    const res = await fetch(`${baseUrl}/events/${eventId}`, {
-      method: "DELETE",
+    const res = await fetch(`${baseUrl}/api/products`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch products");
+    }
+
+    const products = await res.json();
+    productsDiv.innerHTML = "";
+
+    if (!products.length) {
+      productsDiv.innerHTML =
+        "<p class='status-message'>No products available.</p>";
+      return;
+    }
+
+    products.forEach((product) => {
+      productsDiv.appendChild(renderProductCard(product));
     });
+  } catch (err) {
+    console.error("Error loading products:", err);
+    productsDiv.innerHTML =
+      "<p class='status-message error'>Unable to load products. Please try again later.</p>";
+  }
+}
+
+function renderProductCard(product) {
+  const card = document.createElement("article");
+  card.className = "product-card";
+
+  const title = document.createElement("h4");
+  title.textContent = product.name;
+
+  const description = document.createElement("p");
+  description.textContent = product.description || "No description available.";
+  description.className = "product-description";
+
+  const price = document.createElement("p");
+  price.className = "product-price";
+  price.textContent = `$${product.price}`;
+
+  const image = document.createElement("img");
+  if (product.image) {
+    image.src = product.image;
+    image.alt = product.name;
+    image.className = "product-image";
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "button-row";
+
+  if (!adminSection.classList.contains("hidden")) {
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "secondary-btn";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => fillProductForm(product));
+    actions.appendChild(editBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "danger-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deleteProduct(product.id));
+    actions.appendChild(deleteBtn);
+  }
+
+  card.append(title, image, description, price, actions);
+  return card;
+}
+
+function fillProductForm(product) {
+  document.getElementById("productId").value = product.id;
+  document.getElementById("productName").value = product.name;
+  document.getElementById("productPrice").value = product.price;
+  document.getElementById("productImage").value = product.image || "";
+  document.getElementById("productDescription").value =
+    product.description || "";
+
+  document.getElementById("cancelProductEdit").classList.remove("hidden");
+  showMessage(
+    adminMessage,
+    "Editing product. Update the fields and save.",
+    "success",
+  );
+}
+
+function resetProductForm() {
+  document.getElementById("productForm").reset();
+  document.getElementById("productId").value = "";
+  document.getElementById("cancelProductEdit").classList.add("hidden");
+  hideMessage(adminMessage);
+}
+
+async function submitProductForm(e) {
+  e.preventDefault();
+  hideMessage(adminMessage);
+
+  const name = document.getElementById("productName").value.trim();
+  const price = parseFloat(document.getElementById("productPrice").value);
+  const image = document.getElementById("productImage").value.trim();
+  const description = document
+    .getElementById("productDescription")
+    .value.trim();
+  const productId = document.getElementById("productId").value;
+
+  if (!name || isNaN(price)) {
+    showMessage(adminMessage, "Name and valid price are required.", "error");
+    return;
+  }
+
+  const payload = { name, price, image, description };
+  const url = productId
+    ? `${baseUrl}/api/products/${productId}`
+    : `${baseUrl}/api/products`;
+  const method = productId ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.message || "Could not delete event.");
+      throw new Error(data.message || "Unable to save product.");
     }
 
     showMessage(
       adminMessage,
-      data.message || "Event removed successfully.",
+      data.message || "Product saved successfully.",
       "success",
     );
-    loadEvents();
-    loadRegistrations();
+    resetProductForm();
+    loadProducts();
   } catch (err) {
-    console.error("Error deleting event:", err);
+    console.error("Error saving product:", err);
     showMessage(
       adminMessage,
-      err.message || "Unable to remove event.",
+      err.message || "Failed to save product.",
+      "error",
+    );
+  }
+}
+
+async function deleteProduct(productId) {
+  const confirmed = confirm("Delete this product? This cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/products/${productId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not delete product.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Product removed successfully.",
+      "success",
+    );
+    loadProducts();
+  } catch (err) {
+    console.error("Error deleting product:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Unable to remove product.",
       "error",
     );
   }
@@ -304,7 +451,7 @@ async function loadRegistrations() {
   hideMessage(adminMessage);
 
   try {
-    const res = await fetch(`${baseUrl}/registrations`);
+    const res = await fetch(`${baseUrl}/api/registrations`);
     if (!res.ok) {
       throw new Error("Failed to fetch registrations");
     }
@@ -359,7 +506,7 @@ async function deleteRegistration(registrationId) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch(`${baseUrl}/registrations/${registrationId}`, {
+    const res = await fetch(`${baseUrl}/api/registrations/${registrationId}`, {
       method: "DELETE",
     });
     const data = await res.json();
@@ -385,7 +532,7 @@ async function deleteRegistration(registrationId) {
 
 async function exportRegistrations() {
   try {
-    const res = await fetch(`${baseUrl}/registrations/export`);
+    const res = await fetch(`${baseUrl}/api/registrations/export`);
     if (!res.ok) {
       throw new Error("Unable to download CSV.");
     }
@@ -437,6 +584,8 @@ function initialize() {
     "refreshRegistrations",
   );
   const exportCsvBtn = document.getElementById("exportCsv");
+  const productForm = document.getElementById("productForm");
+  const cancelProductEdit = document.getElementById("cancelProductEdit");
 
   if (adminToggle) {
     adminToggle.addEventListener("click", () => {
@@ -474,6 +623,14 @@ function initialize() {
 
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener("click", exportRegistrations);
+  }
+
+  if (productForm) {
+    productForm.addEventListener("submit", submitProductForm);
+  }
+
+  if (cancelProductEdit) {
+    cancelProductEdit.addEventListener("click", resetProductForm);
   }
 
   if (registrationModal) {

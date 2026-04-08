@@ -21,4 +21,29 @@ router.post("/", (req, res) => {
   );
 });
 
+router.put("/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, description, date, location } = req.body;
+  db.run(
+    "UPDATE events SET name = ?, description = ?, date = ?, location = ? WHERE id = ?",
+    [name, description, date, location, id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0)
+        return res.status(404).json({ message: "Event not found" });
+      res.json({ message: "Event updated successfully" });
+    },
+  );
+});
+
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+  db.run("DELETE FROM events WHERE id = ?", [id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0)
+      return res.status(404).json({ message: "Event not found" });
+    res.json({ message: "Event deleted successfully" });
+  });
+});
+
 module.exports = router;

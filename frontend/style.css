@@ -119,6 +119,33 @@ header h1 {
   font-size: 1.2rem;
 }
 
+.product-card {
+  background: #f8fbff;
+  border: 1px solid rgba(34, 59, 122, 0.08);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-card h4 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.product-description,
+.product-price {
+  margin: 0;
+  color: #475569;
+}
+
+.product-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
 .event-description,
 .event-meta,
 .registration-title,
