@@ -1,7 +1,4 @@
-const baseUrl =
-  window.location.protocol === "file:"
-    ? "http://localhost:3000"
-    : window.location.origin;
+const baseUrl = "http://localhost:3000";
 const ADMIN_PASSWORD = "joyful123";
 let currentEditEventId = null;
 
