@@ -69,6 +69,16 @@ db.serialize(() => {
       order_date TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Partners table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS partners (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      logo TEXT
+    )
+  `);
 });
 
 module.exports = db;

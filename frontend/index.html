@@ -44,6 +44,16 @@
           <div id="products" class="card-grid"></div>
         </section>
 
+        <section id="partners-section" class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Our Partners</h2>
+              <p class="panel-subtitle">Meet our valued partners.</p>
+            </div>
+          </div>
+          <div id="partners" class="card-grid"></div>
+        </section>
+
         <section id="admin-section" class="panel hidden">
           <div class="panel-heading admin-heading">
             <div>
@@ -152,10 +162,48 @@
               </button>
             </div>
           </form>
-
+          <form id="partnerForm" class="form-grid">
+            <input type="hidden" id="partnerId" />
+            <label>
+              Partner Name
+              <input
+                type="text"
+                id="partnerName"
+                placeholder="Partner Name"
+                required
+              />
+            </label>
+            <label>
+              Logo URL
+              <input type="url" id="partnerLogo" placeholder="Logo URL" />
+            </label>
+            <label class="full-width">
+              Description
+              <textarea
+                id="partnerDescription"
+                rows="3"
+                placeholder="Partner description"
+              ></textarea>
+            </label>
+            <div class="form-actions full-width">
+              <button type="submit" class="primary-btn">Save Partner</button>
+              <button
+                type="button"
+                id="cancelPartnerEdit"
+                class="secondary-btn hidden"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
           <section id="products-section" class="panel compact-panel">
             <h3>Products</h3>
             <div id="admin-products" class="card-grid"></div>
+          </section>
+
+          <section id="partners-section-admin" class="panel compact-panel">
+            <h3>Partners</h3>
+            <div id="admin-partners" class="card-grid"></div>
           </section>
 
           <section id="registrations-section" class="panel compact-panel">

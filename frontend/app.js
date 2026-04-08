@@ -48,6 +48,7 @@ function setAdminMode(enabled) {
   if (enabled) {
     loadRegistrations();
     loadProducts(true);
+    loadPartners(true);
   }
 }
 
@@ -446,6 +447,181 @@ async function deleteProduct(productId) {
   }
 }
 
+async function loadPartners(isAdmin = false) {
+  const partnersDiv = document.getElementById(
+    isAdmin ? "admin-partners" : "partners",
+  );
+  partnersDiv.innerHTML = "<p class='status-message'>Loading partners...</p>";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/partners`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch partners");
+    }
+
+    const partners = await res.json();
+    partnersDiv.innerHTML = "";
+
+    if (!partners.length) {
+      partnersDiv.innerHTML = isAdmin
+        ? "<p class='status-message'>No partners available.</p>"
+        : "<p class='status-message'>No partners at the moment.</p>";
+      return;
+    }
+
+    partners.forEach((partner) => {
+      partnersDiv.appendChild(renderPartnerCard(partner, isAdmin));
+    });
+  } catch (err) {
+    console.error("Error loading partners:", err);
+    partnersDiv.innerHTML =
+      "<p class='status-message error'>Unable to load partners. Please try again later.</p>";
+  }
+}
+
+function renderPartnerCard(partner, isAdmin = false) {
+  const card = document.createElement("article");
+  card.className = "partner-card";
+
+  const title = document.createElement("h4");
+  title.textContent = partner.name;
+
+  const description = document.createElement("p");
+  description.textContent = partner.description || "No description available.";
+  description.className = "partner-description";
+
+  const logo = document.createElement("img");
+  logo.src = partner.logo || "https://via.placeholder.com/150x150?text=No+Logo";
+  logo.alt = partner.name;
+  logo.className = "partner-logo";
+
+  const actions = document.createElement("div");
+  actions.className = "button-row";
+
+  if (isAdmin) {
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "secondary-btn";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => fillPartnerForm(partner));
+    actions.appendChild(editBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "danger-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deletePartner(partner.id));
+    actions.appendChild(deleteBtn);
+  }
+
+  card.append(title, logo, description, actions);
+  return card;
+}
+
+function fillPartnerForm(partner) {
+  document.getElementById("partnerId").value = partner.id;
+  document.getElementById("partnerName").value = partner.name;
+  document.getElementById("partnerLogo").value = partner.logo || "";
+  document.getElementById("partnerDescription").value =
+    partner.description || "";
+
+  document.getElementById("cancelPartnerEdit").classList.remove("hidden");
+  showMessage(
+    adminMessage,
+    "Editing partner. Update the fields and save.",
+    "success",
+  );
+}
+
+function resetPartnerForm() {
+  document.getElementById("partnerForm").reset();
+  document.getElementById("partnerId").value = "";
+  document.getElementById("cancelPartnerEdit").classList.add("hidden");
+  hideMessage(adminMessage);
+}
+
+async function submitPartnerForm(e) {
+  e.preventDefault();
+  hideMessage(adminMessage);
+
+  const name = document.getElementById("partnerName").value.trim();
+  const logo = document.getElementById("partnerLogo").value.trim();
+  const description = document
+    .getElementById("partnerDescription")
+    .value.trim();
+  const partnerId = document.getElementById("partnerId").value;
+
+  if (!name) {
+    showMessage(adminMessage, "Partner name is required.", "error");
+    return;
+  }
+
+  const payload = { name, logo, description };
+  const url = partnerId
+    ? `${baseUrl}/api/partners/${partnerId}`
+    : `${baseUrl}/api/partners`;
+  const method = partnerId ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Unable to save partner.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Partner saved successfully.",
+      "success",
+    );
+    resetPartnerForm();
+    loadPartners(true);
+    loadPartners(false);
+  } catch (err) {
+    console.error("Error saving partner:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Failed to save partner.",
+      "error",
+    );
+  }
+}
+
+async function deletePartner(partnerId) {
+  const confirmed = confirm("Delete this partner? This cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/partners/${partnerId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not delete partner.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Partner removed successfully.",
+      "success",
+    );
+    loadPartners(true);
+    loadPartners(false);
+  } catch (err) {
+    console.error("Error deleting partner:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Unable to remove partner.",
+      "error",
+    );
+  }
+}
+
 async function loadRegistrations() {
   const regDiv = document.getElementById("registrations");
   regDiv.innerHTML = "<p class='status-message'>Loading registrations...</p>";
@@ -587,6 +763,8 @@ function initialize() {
   const exportCsvBtn = document.getElementById("exportCsv");
   const productForm = document.getElementById("productForm");
   const cancelProductEdit = document.getElementById("cancelProductEdit");
+  const partnerForm = document.getElementById("partnerForm");
+  const cancelPartnerEdit = document.getElementById("cancelPartnerEdit");
 
   if (adminToggle) {
     adminToggle.addEventListener("click", () => {
@@ -634,6 +812,14 @@ function initialize() {
     cancelProductEdit.addEventListener("click", resetProductForm);
   }
 
+  if (partnerForm) {
+    partnerForm.addEventListener("submit", submitPartnerForm);
+  }
+
+  if (cancelPartnerEdit) {
+    cancelPartnerEdit.addEventListener("click", resetPartnerForm);
+  }
+
   if (registrationModal) {
     registrationModal.addEventListener("click", (event) => {
       if (event.target === registrationModal) {
@@ -644,6 +830,7 @@ function initialize() {
 
   loadEvents();
   loadProducts(false);
+  loadPartners(false);
 }
 
 document.addEventListener("DOMContentLoaded", initialize);
