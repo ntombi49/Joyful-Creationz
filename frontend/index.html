@@ -206,6 +206,11 @@
             <div id="admin-partners" class="card-grid"></div>
           </section>
 
+          <section id="orders-section" class="panel compact-panel">
+            <h3>Orders</h3>
+            <div id="orders" class="card-grid"></div>
+          </section>
+
           <section id="registrations-section" class="panel compact-panel">
             <h3>Registrations</h3>
             <div id="registrations" class="card-grid"></div>
@@ -255,6 +260,63 @@
               Submit Registration
             </button>
             <button type="button" id="cancelRegistration" class="secondary-btn">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="orderModal" class="modal hidden">
+      <div class="modal-card">
+        <button id="closeOrderModal" class="modal-close" type="button">
+          ×
+        </button>
+        <h2>Order <span id="modalProductTitle"></span></h2>
+        <div id="orderMessage" class="message hidden"></div>
+        <form id="orderForm" class="form-grid">
+          <input type="hidden" id="modalProductId" />
+          <label>
+            Quantity
+            <input
+              type="number"
+              id="orderQuantity"
+              placeholder="1"
+              min="1"
+              value="1"
+              required
+            />
+          </label>
+          <label>
+            Your Name
+            <input
+              type="text"
+              id="orderName"
+              placeholder="Full Name"
+              required
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              id="orderEmail"
+              placeholder="name@example.com"
+              required
+            />
+          </label>
+          <label>
+            Phone
+            <input
+              type="tel"
+              id="orderPhone"
+              placeholder="123-456-7890"
+              required
+            />
+          </label>
+          <div class="form-actions full-width">
+            <button type="submit" class="primary-btn">Place Order</button>
+            <button type="button" id="cancelOrder" class="secondary-btn">
               Cancel
             </button>
           </div>

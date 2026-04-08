@@ -5,8 +5,10 @@ let currentEditEventId = null;
 const mainMessage = document.getElementById("mainMessage");
 const adminMessage = document.getElementById("adminMessage");
 const modalMessage = document.getElementById("modalMessage");
+const orderMessage = document.getElementById("orderMessage");
 const adminSection = document.getElementById("admin-section");
 const registrationModal = document.getElementById("registrationModal");
+const orderModal = document.getElementById("orderModal");
 
 function showMessage(element, text, type = "success") {
   if (!element) return;
@@ -49,6 +51,7 @@ function setAdminMode(enabled) {
     loadRegistrations();
     loadProducts(true);
     loadPartners(true);
+    loadOrders();
   }
 }
 
@@ -189,6 +192,75 @@ async function submitRegistration(event) {
       err.message || "Unable to complete registration.",
       "error",
     );
+  }
+}
+
+function openOrderModal(product) {
+  hideMessage(mainMessage);
+  hideMessage(orderMessage);
+  document.getElementById("modalProductTitle").textContent = product.name;
+  document.getElementById("modalProductId").value = product.id;
+  orderModal.classList.remove("hidden");
+}
+
+function closeOrderModal() {
+  hideMessage(orderMessage);
+  document.getElementById("orderForm").reset();
+  orderModal.classList.add("hidden");
+}
+
+async function submitOrder(event) {
+  event.preventDefault();
+  hideMessage(orderMessage);
+
+  const productId = document.getElementById("modalProductId").value;
+  const quantity = parseInt(document.getElementById("orderQuantity").value);
+  const name = document.getElementById("orderName").value.trim();
+  const email = document.getElementById("orderEmail").value.trim();
+  const phone = document.getElementById("orderPhone").value.trim();
+
+  if (!name || !email || !phone || quantity < 1) {
+    showMessage(
+      orderMessage,
+      "Please fill in all fields with valid information.",
+      "error",
+    );
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    showMessage(orderMessage, "Please enter a valid email address.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/api/orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_id: Number(productId),
+        quantity,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Order failed");
+    }
+
+    showMessage(
+      mainMessage,
+      data.message || "Order placed successfully! Admin will be notified.",
+      "success",
+    );
+    closeOrderModal();
+  } catch (err) {
+    console.error("Order failed:", err);
+    showMessage(orderMessage, err.message || "Unable to place order.", "error");
   }
 }
 
@@ -335,6 +407,13 @@ function renderProductCard(product, isAdmin = false) {
     deleteBtn.textContent = "Delete";
     deleteBtn.addEventListener("click", () => deleteProduct(product.id));
     actions.appendChild(deleteBtn);
+  } else {
+    const buyBtn = document.createElement("button");
+    buyBtn.type = "button";
+    buyBtn.className = "primary-btn";
+    buyBtn.textContent = "Buy Now";
+    buyBtn.addEventListener("click", () => openOrderModal(product));
+    actions.appendChild(buyBtn);
   }
 
   card.append(title, image, description, price, actions);
@@ -622,6 +701,132 @@ async function deletePartner(partnerId) {
   }
 }
 
+async function loadOrders() {
+  const ordersDiv = document.getElementById("orders");
+  ordersDiv.innerHTML = "<p class='status-message'>Loading orders...</p>";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/orders`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch orders");
+    }
+
+    const orders = await res.json();
+    ordersDiv.innerHTML = "";
+
+    if (!orders.length) {
+      ordersDiv.innerHTML = "<p class='status-message'>No orders yet.</p>";
+      return;
+    }
+
+    orders.forEach((order) => {
+      ordersDiv.appendChild(renderOrderCard(order));
+    });
+  } catch (err) {
+    console.error("Error loading orders:", err);
+    ordersDiv.innerHTML =
+      "<p class='status-message error'>Unable to load orders. Please try again later.</p>";
+  }
+}
+
+function renderOrderCard(order) {
+  const card = document.createElement("article");
+  card.className = "order-card";
+
+  const title = document.createElement("p");
+  title.className = "order-title";
+  title.innerHTML = `<strong>${order.customer_name}</strong> • ${order.customer_email}`;
+
+  const details = document.createElement("p");
+  details.textContent = `${order.product_name} x${order.quantity} - $${order.total} (${order.status})`;
+
+  const meta = document.createElement("p");
+  meta.className = "order-meta";
+  meta.textContent = `Ordered on ${formatDate(order.order_date)} • Phone: ${order.customer_phone}`;
+
+  const actions = document.createElement("div");
+  actions.className = "button-row";
+
+  if (order.status === "pending") {
+    const completeBtn = document.createElement("button");
+    completeBtn.type = "button";
+    completeBtn.className = "primary-btn";
+    completeBtn.textContent = "Mark Complete";
+    completeBtn.addEventListener("click", () =>
+      updateOrderStatus(order.id, "completed"),
+    );
+    actions.appendChild(completeBtn);
+  }
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "danger-btn";
+  deleteBtn.textContent = "Delete";
+  deleteBtn.addEventListener("click", () => deleteOrder(order.id));
+  actions.appendChild(deleteBtn);
+
+  card.append(title, details, meta, actions);
+  return card;
+}
+
+async function updateOrderStatus(orderId, status) {
+  try {
+    const res = await fetch(`${baseUrl}/api/orders/${orderId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to update order");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Order updated successfully.",
+      "success",
+    );
+    loadOrders();
+  } catch (err) {
+    console.error("Error updating order:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Failed to update order.",
+      "error",
+    );
+  }
+}
+
+async function deleteOrder(orderId) {
+  const confirmed = confirm("Delete this order? This cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/orders/${orderId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not delete order.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Order removed successfully.",
+      "success",
+    );
+    loadOrders();
+  } catch (err) {
+    console.error("Error deleting order:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Unable to remove order.",
+      "error",
+    );
+  }
+}
+
 async function loadRegistrations() {
   const regDiv = document.getElementById("registrations");
   regDiv.innerHTML = "<p class='status-message'>Loading registrations...</p>";
@@ -765,6 +970,9 @@ function initialize() {
   const cancelProductEdit = document.getElementById("cancelProductEdit");
   const partnerForm = document.getElementById("partnerForm");
   const cancelPartnerEdit = document.getElementById("cancelPartnerEdit");
+  const orderForm = document.getElementById("orderForm");
+  const closeOrderModal = document.getElementById("closeOrderModal");
+  const cancelOrder = document.getElementById("cancelOrder");
 
   if (adminToggle) {
     adminToggle.addEventListener("click", () => {
@@ -820,10 +1028,30 @@ function initialize() {
     cancelPartnerEdit.addEventListener("click", resetPartnerForm);
   }
 
+  if (orderForm) {
+    orderForm.addEventListener("submit", submitOrder);
+  }
+
+  if (closeOrderModal) {
+    closeOrderModal.addEventListener("click", closeOrderModal);
+  }
+
+  if (cancelOrder) {
+    cancelOrder.addEventListener("click", closeOrderModal);
+  }
+
   if (registrationModal) {
     registrationModal.addEventListener("click", (event) => {
       if (event.target === registrationModal) {
         closeRegistrationModal();
+      }
+    });
+  }
+
+  if (orderModal) {
+    orderModal.addEventListener("click", (event) => {
+      if (event.target === orderModal) {
+        closeOrderModal();
       }
     });
   }

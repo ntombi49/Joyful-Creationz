@@ -66,9 +66,39 @@ db.serialize(() => {
       user_id INTEGER,
       product_id INTEGER,
       quantity INTEGER,
-      order_date TEXT DEFAULT CURRENT_TIMESTAMP
+      order_date TEXT DEFAULT CURRENT_TIMESTAMP,
+      customer_name TEXT,
+      customer_email TEXT,
+      customer_phone TEXT,
+      total REAL,
+      status TEXT DEFAULT 'pending'
     )
   `);
+
+  // Add new columns if they don't exist (for existing databases)
+  db.run(`ALTER TABLE orders ADD COLUMN customer_name TEXT`, (err) => {
+    if (err && !err.message.includes("duplicate column name"))
+      console.error("Alter table error:", err);
+  });
+  db.run(`ALTER TABLE orders ADD COLUMN customer_email TEXT`, (err) => {
+    if (err && !err.message.includes("duplicate column name"))
+      console.error("Alter table error:", err);
+  });
+  db.run(`ALTER TABLE orders ADD COLUMN customer_phone TEXT`, (err) => {
+    if (err && !err.message.includes("duplicate column name"))
+      console.error("Alter table error:", err);
+  });
+  db.run(`ALTER TABLE orders ADD COLUMN total REAL`, (err) => {
+    if (err && !err.message.includes("duplicate column name"))
+      console.error("Alter table error:", err);
+  });
+  db.run(
+    `ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending'`,
+    (err) => {
+      if (err && !err.message.includes("duplicate column name"))
+        console.error("Alter table error:", err);
+    },
+  );
 
   // Partners table
   db.run(`
