@@ -47,7 +47,7 @@ function setAdminMode(enabled) {
   loadEvents();
   if (enabled) {
     loadRegistrations();
-    loadProducts();
+    loadProducts(true);
   }
 }
 
@@ -264,8 +264,10 @@ async function submitEventForm(e) {
   }
 }
 
-async function loadProducts() {
-  const productsDiv = document.getElementById("products");
+async function loadProducts(isAdmin = false) {
+  const productsDiv = document.getElementById(
+    isAdmin ? "admin-products" : "products",
+  );
   productsDiv.innerHTML = "<p class='status-message'>Loading products...</p>";
 
   try {
@@ -278,13 +280,14 @@ async function loadProducts() {
     productsDiv.innerHTML = "";
 
     if (!products.length) {
-      productsDiv.innerHTML =
-        "<p class='status-message'>No products available.</p>";
+      productsDiv.innerHTML = isAdmin
+        ? "<p class='status-message'>No products available.</p>"
+        : "<p class='status-message'>No products available at the moment.</p>";
       return;
     }
 
     products.forEach((product) => {
-      productsDiv.appendChild(renderProductCard(product));
+      productsDiv.appendChild(renderProductCard(product, isAdmin));
     });
   } catch (err) {
     console.error("Error loading products:", err);
@@ -293,7 +296,7 @@ async function loadProducts() {
   }
 }
 
-function renderProductCard(product) {
+function renderProductCard(product, isAdmin = false) {
   const card = document.createElement("article");
   card.className = "product-card";
 
@@ -309,16 +312,15 @@ function renderProductCard(product) {
   price.textContent = `$${product.price}`;
 
   const image = document.createElement("img");
-  if (product.image) {
-    image.src = product.image;
-    image.alt = product.name;
-    image.className = "product-image";
-  }
+  image.src =
+    product.image || "https://via.placeholder.com/150x150?text=No+Image";
+  image.alt = product.name;
+  image.className = "product-image";
 
   const actions = document.createElement("div");
   actions.className = "button-row";
 
-  if (!adminSection.classList.contains("hidden")) {
+  if (isAdmin) {
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "secondary-btn";
@@ -402,7 +404,8 @@ async function submitProductForm(e) {
       "success",
     );
     resetProductForm();
-    loadProducts();
+    loadProducts(true);
+    loadProducts(false); // reload public too
   } catch (err) {
     console.error("Error saving product:", err);
     showMessage(
@@ -431,7 +434,8 @@ async function deleteProduct(productId) {
       data.message || "Product removed successfully.",
       "success",
     );
-    loadProducts();
+    loadProducts(true);
+    loadProducts(false);
   } catch (err) {
     console.error("Error deleting product:", err);
     showMessage(
@@ -639,6 +643,7 @@ function initialize() {
   }
 
   loadEvents();
+  loadProducts(false);
 }
 
 document.addEventListener("DOMContentLoaded", initialize);

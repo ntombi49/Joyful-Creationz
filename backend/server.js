@@ -9,6 +9,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "joyful123";
 
 app.use(cors());
 app.use(express.json());
+app.use("/images", express.static(path.join(__dirname, "public", "images")));
 app.use("/api/events", require("./routes/events"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
