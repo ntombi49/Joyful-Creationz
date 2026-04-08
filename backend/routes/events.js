@@ -10,13 +10,13 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", (req, res) => {
-  const { name, description, event_date, location } = req.body;
+  const { name, description, date, location } = req.body;
   db.run(
-    "INSERT INTO events (name, description, event_date, location) VALUES (?, ?, ?, ?)",
-    [name, description, event_date, location],
+    "INSERT INTO events (name, description, date, location) VALUES (?, ?, ?, ?)",
+    [name, description, date, location],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, name, event_date });
+      res.json({ id: this.lastID, name, date });
     },
   );
 });

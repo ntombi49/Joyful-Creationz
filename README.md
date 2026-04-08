@@ -48,6 +48,17 @@ http://<your-machine-ip>:3000
 
 Make sure your computer's firewall allows incoming traffic on port `3000`.
 
+## API
+
+- `GET /api/events`
+- `POST /api/events`
+- `GET /api/products`
+- `POST /api/products`
+- `GET /api/orders`
+- `POST /api/orders`
+- `GET /api/users`
+- `POST /api/users`
+
 ## Notes
 
 - All event and registration validations happen on both frontend and backend.
