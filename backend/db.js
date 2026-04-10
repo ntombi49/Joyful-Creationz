@@ -22,9 +22,15 @@ db.serialize(() => {
       name TEXT NOT NULL,
       description TEXT,
       date TEXT,
-      location TEXT
+      location TEXT,
+      image TEXT
     )
   `);
+
+  db.run(`ALTER TABLE events ADD COLUMN image TEXT`, (err) => {
+    if (err && !err.message.includes("duplicate column name"))
+      console.error("Alter table error:", err);
+  });
 
   // Registrations table
   db.run(`

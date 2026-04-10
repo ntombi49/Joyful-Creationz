@@ -10,23 +10,23 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", (req, res) => {
-  const { name, description, date, location } = req.body;
+  const { name, description, date, location, image } = req.body;
   db.run(
-    "INSERT INTO events (name, description, date, location) VALUES (?, ?, ?, ?)",
-    [name, description, date, location],
+    "INSERT INTO events (name, description, date, location, image) VALUES (?, ?, ?, ?, ?)",
+    [name, description, date, location, image],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, name, date });
+      res.json({ id: this.lastID, name, date, image });
     },
   );
 });
 
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { name, description, date, location } = req.body;
+  const { name, description, date, location, image } = req.body;
   db.run(
-    "UPDATE events SET name = ?, description = ?, date = ?, location = ? WHERE id = ?",
-    [name, description, date, location, id],
+    "UPDATE events SET name = ?, description = ?, date = ?, location = ?, image = ? WHERE id = ?",
+    [name, description, date, location, image, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0)
