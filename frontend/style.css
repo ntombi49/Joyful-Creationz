@@ -25,13 +25,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family:
-    "Trebuchet MS",
-    "Segoe UI",
-    Tahoma,
-    Geneva,
-    Verdana,
-    sans-serif;
+  font-family: "Trebuchet MS", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.75), transparent 34%),
     radial-gradient(circle at top right, rgba(230, 161, 91, 0.22), transparent 24%),
@@ -98,13 +92,7 @@ header {
   right: 0;
   bottom: -10px;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(92, 45, 24, 0.18) 14%,
-    rgba(92, 45, 24, 0.08) 84%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, rgba(92, 45, 24, 0.18) 14%, rgba(92, 45, 24, 0.08) 84%, transparent 100% );
 }
 
 .site-brand {
@@ -122,12 +110,14 @@ header {
 
 .brand-wordmark {
   margin: 0;
-  font-size: clamp(1.35rem, 3vw, 2.3rem);
-  line-height: 0.95;
-  letter-spacing: 0.32em;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.45em;
   color: var(--primary);
   text-transform: uppercase;
-  text-shadow: 0 6px 18px rgba(184, 79, 43, 0.14);
+  text-shadow: 0 8px 24px rgba(184, 79, 43, 0.2);
+  display: block;
 }
 
 header h1,
@@ -139,10 +129,10 @@ header h1,
 }
 
 header h1 {
-  margin-top: 14px;
-  font-size: clamp(3rem, 6vw, 5.8rem);
+  margin-top: 10px;
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
   color: var(--text);
-  max-width: 10ch;
+  max-width: 40ch;
 }
 
 .eyebrow {
@@ -159,7 +149,8 @@ header h1 {
   color: var(--muted);
   line-height: 1.8;
   max-width: 58ch;
-  font-size: 1.02rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 .site-nav {
@@ -177,9 +168,7 @@ header h1 {
   letter-spacing: 0.04em;
   padding: 10px 0;
   position: relative;
-  transition:
-    color 0.2s ease,
-    transform 0.2s ease;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .site-nav a::after {
@@ -222,9 +211,7 @@ header h1 {
   padding: 42px clamp(24px, 4vw, 56px) 46px;
   margin: 14px 0 54px;
   border-radius: 36px;
-  background:
-    linear-gradient(135deg, rgba(255, 252, 248, 0.76), rgba(255, 246, 237, 0.92)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+  background: linear-gradient(135deg, rgba(255, 252, 248, 0.76), rgba(255, 246, 237, 0.92)), linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
   border: 1px solid rgba(92, 45, 24, 0.08);
   box-shadow: var(--shadow-float);
   overflow: hidden;
@@ -295,11 +282,7 @@ main {
   cursor: pointer;
   font-weight: 700;
   letter-spacing: 0.03em;
-  transition:
-    transform 0.18s ease,
-    background-color 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease;
+  transition: transform 0.18s ease, background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -409,6 +392,20 @@ main {
   backdrop-filter: blur(10px);
 }
 
+.event-card img, 
+.event-image,
+.product-card img, 
+.product-image,
+.partner-card img, 
+.partner-logo {
+  width: 100%;
+  height: 220px;
+  border-radius: 20px;
+  object-fit: cover;
+  background: #ffffff;
+  padding: 0;
+}
+
 .event-card h3,
 .product-card h4,
 .partner-card h4,
@@ -421,20 +418,7 @@ main {
 .registration-card h3,
 .product-card h4,
 .partner-card h4 {
-  font-size: 1.28rem;
-}
-
-.event-card img,
-.product-card img,
-.partner-card img,
-.event-image,
-.partner-logo,
-.product-image {
-  width: 100%;
-  height: auto;
-  border-radius: 20px;
-  object-fit: cover;
-  box-shadow: 0 16px 30px rgba(109, 54, 29, 0.12);
+  font-size: 1.2rem;
 }
 
 .event-description,
@@ -449,13 +433,13 @@ main {
 .partner-price {
   margin: 0;
   color: var(--muted);
-  line-height: 1.8;
+  line-height: 1.6;
 }
 
 .event-meta,
 .registration-status,
 .order-meta {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .button-row {
@@ -599,20 +583,16 @@ main {
   .page-shell {
     padding: 24px 18px 56px;
   }
-
   .site-header {
     padding-top: 18px;
   }
-
   header h1 {
     max-width: 12ch;
   }
-
   .hero-panel {
     padding: 32px 22px 34px;
     border-radius: 28px;
   }
-
   .form-grid {
     padding: 20px;
   }
@@ -622,11 +602,10 @@ main {
   header h1 {
     font-size: clamp(2.5rem, 14vw, 4rem);
   }
-
   .brand-wordmark {
     letter-spacing: 0.22em;
+    font-size: 1.8rem;
   }
-
   .site-brand,
   .admin-actions,
   .button-row,
@@ -636,15 +615,12 @@ main {
     flex-direction: column;
     align-items: stretch;
   }
-
   .site-nav {
     gap: 10px;
   }
-
   .site-nav a {
     padding: 8px 0;
   }
-
   .panel-heading,
   .admin-heading {
     align-items: flex-start;
