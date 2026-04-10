@@ -1,4 +1,7 @@
-const baseUrl = window.location.origin;
+const baseUrl =
+  window.location.origin && window.location.origin !== "null"
+    ? window.location.origin
+    : "http://localhost:3000";
 const ADMIN_PASSWORD = "joyful123";
 let currentEditEventId = null;
 
@@ -11,6 +14,24 @@ function resolveAssetUrl(src) {
   if (trimmed.toLowerCase().startsWith("images/"))
     return encodeURI(`/${trimmed}`);
   return encodeURI(`${baseUrl}/images/${trimmed}`);
+}
+
+async function uploadImageFile(file) {
+  if (!file) return null;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${baseUrl}/api/uploads`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "Unable to upload image.");
+  }
+
+  return data.filename || data.url;
 }
 
 const mainMessage = document.getElementById("mainMessage");
@@ -44,6 +65,12 @@ function formatDate(value) {
     day: "numeric",
     year: "numeric",
   }).format(date);
+}
+
+function formatCurrency(value) {
+  const amount = Number(value);
+  if (Number.isNaN(amount)) return `R ${value}`;
+  return `R ${amount.toFixed(2)}`;
 }
 
 function validateEmail(email) {
@@ -99,6 +126,13 @@ function renderEventCard(event) {
   const card = document.createElement("article");
   card.className = "event-card";
 
+  const image = document.createElement("img");
+  image.src =
+    resolveAssetUrl(event.image) ||
+    "https://via.placeholder.com/460x260?text=Event+Image";
+  image.alt = event.name;
+  image.className = "event-image";
+
   const title = document.createElement("h3");
   title.textContent = event.name;
 
@@ -136,7 +170,7 @@ function renderEventCard(event) {
     actions.appendChild(deleteBtn);
   }
 
-  card.append(title, description, meta, actions);
+  card.append(image, title, description, meta, actions);
   return card;
 }
 
@@ -281,6 +315,8 @@ function fillEventForm(event) {
   document.getElementById("name").value = event.name;
   document.getElementById("location").value = event.location;
   document.getElementById("date").value = event.date;
+  document.getElementById("eventImage").value = event.image || "";
+  document.getElementById("eventImageFile").value = "";
   document.getElementById("description").value = event.description || "";
 
   document.getElementById("cancelEdit").classList.remove("hidden");
@@ -295,6 +331,7 @@ function resetEventForm() {
   currentEditEventId = null;
   document.getElementById("eventForm").reset();
   document.getElementById("eventId").value = "";
+  document.getElementById("eventImageFile").value = "";
   document.getElementById("cancelEdit").classList.add("hidden");
   hideMessage(adminMessage);
 }
@@ -306,6 +343,9 @@ async function submitEventForm(e) {
   const name = document.getElementById("name").value.trim();
   const date = document.getElementById("date").value;
   const location = document.getElementById("location").value.trim();
+  const imageInput = document.getElementById("eventImage").value.trim();
+  const imageFile = document.getElementById("eventImageFile").files[0];
+  let image = imageInput;
   const description = document.getElementById("description").value.trim();
 
   if (!name || !date || !location) {
@@ -317,7 +357,15 @@ async function submitEventForm(e) {
     return;
   }
 
-  const payload = { name, date, location, description };
+  if (imageFile) {
+    try {
+      image = await uploadImageFile(imageFile);
+    } catch (uploadErr) {
+      throw new Error(uploadErr.message || "Unable to upload event image.");
+    }
+  }
+
+  const payload = { name, date, location, description, image };
   const url = currentEditEventId
     ? `${baseUrl}/api/events/${currentEditEventId}`
     : `${baseUrl}/api/events`;
@@ -345,6 +393,38 @@ async function submitEventForm(e) {
   } catch (err) {
     console.error("Error saving event:", err);
     showMessage(adminMessage, err.message || "Failed to save event.", "error");
+  }
+}
+
+async function deleteEvent(eventId) {
+  const confirmed = confirm("Delete this event? This cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/events/${eventId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || data.error || "Could not delete event.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Event removed successfully.",
+      "success",
+    );
+    if (currentEditEventId === eventId) {
+      resetEventForm();
+    }
+    loadEvents();
+  } catch (err) {
+    console.error("Error deleting event:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Unable to remove event.",
+      "error",
+    );
   }
 }
 
@@ -393,7 +473,7 @@ function renderProductCard(product, isAdmin = false) {
 
   const price = document.createElement("p");
   price.className = "product-price";
-  price.textContent = `$${product.price}`;
+  price.textContent = formatCurrency(product.price);
 
   const image = document.createElement("img");
   image.src =
@@ -437,6 +517,7 @@ function fillProductForm(product) {
   document.getElementById("productName").value = product.name;
   document.getElementById("productPrice").value = product.price;
   document.getElementById("productImage").value = product.image || "";
+  document.getElementById("productImageFile").value = "";
   document.getElementById("productDescription").value =
     product.description || "";
 
@@ -451,6 +532,7 @@ function fillProductForm(product) {
 function resetProductForm() {
   document.getElementById("productForm").reset();
   document.getElementById("productId").value = "";
+  document.getElementById("productImageFile").value = "";
   document.getElementById("cancelProductEdit").classList.add("hidden");
   hideMessage(adminMessage);
 }
@@ -461,7 +543,9 @@ async function submitProductForm(e) {
 
   const name = document.getElementById("productName").value.trim();
   const price = parseFloat(document.getElementById("productPrice").value);
-  const image = document.getElementById("productImage").value.trim();
+  const imageInput = document.getElementById("productImage").value.trim();
+  const imageFile = document.getElementById("productImageFile").files[0];
+  let image = imageInput;
   const description = document
     .getElementById("productDescription")
     .value.trim();
@@ -470,6 +554,14 @@ async function submitProductForm(e) {
   if (!name || isNaN(price)) {
     showMessage(adminMessage, "Name and valid price are required.", "error");
     return;
+  }
+
+  if (imageFile) {
+    try {
+      image = await uploadImageFile(imageFile);
+    } catch (uploadErr) {
+      throw new Error(uploadErr.message || "Unable to upload product image.");
+    }
   }
 
   const payload = { name, price, image, description };
@@ -615,6 +707,7 @@ function fillPartnerForm(partner) {
   document.getElementById("partnerId").value = partner.id;
   document.getElementById("partnerName").value = partner.name;
   document.getElementById("partnerLogo").value = partner.logo || "";
+  document.getElementById("partnerLogoFile").value = "";
   document.getElementById("partnerDescription").value =
     partner.description || "";
 
@@ -629,6 +722,7 @@ function fillPartnerForm(partner) {
 function resetPartnerForm() {
   document.getElementById("partnerForm").reset();
   document.getElementById("partnerId").value = "";
+  document.getElementById("partnerLogoFile").value = "";
   document.getElementById("cancelPartnerEdit").classList.add("hidden");
   hideMessage(adminMessage);
 }
@@ -638,7 +732,9 @@ async function submitPartnerForm(e) {
   hideMessage(adminMessage);
 
   const name = document.getElementById("partnerName").value.trim();
-  const logo = document.getElementById("partnerLogo").value.trim();
+  const logoInput = document.getElementById("partnerLogo").value.trim();
+  const logoFile = document.getElementById("partnerLogoFile").files[0];
+  let logo = logoInput;
   const description = document
     .getElementById("partnerDescription")
     .value.trim();
@@ -647,6 +743,14 @@ async function submitPartnerForm(e) {
   if (!name) {
     showMessage(adminMessage, "Partner name is required.", "error");
     return;
+  }
+
+  if (logoFile) {
+    try {
+      logo = await uploadImageFile(logoFile);
+    } catch (uploadErr) {
+      throw new Error(uploadErr.message || "Unable to upload partner logo.");
+    }
   }
 
   const payload = { name, logo, description };
@@ -752,7 +856,7 @@ function renderOrderCard(order) {
   title.innerHTML = `<strong>${order.customer_name}</strong> • ${order.customer_email}`;
 
   const details = document.createElement("p");
-  details.textContent = `${order.product_name} x${order.quantity} - $${order.total} (${order.status})`;
+  details.textContent = `${order.product_name} x${order.quantity} - ${formatCurrency(order.total)} (${order.status})`;
 
   const meta = document.createElement("p");
   meta.className = "order-meta";
@@ -1113,7 +1217,7 @@ function initialize() {
   const partnerForm = document.getElementById("partnerForm");
   const cancelPartnerEdit = document.getElementById("cancelPartnerEdit");
   const orderForm = document.getElementById("orderForm");
-  const closeOrderModal = document.getElementById("closeOrderModal");
+  const closeOrderModalButton = document.getElementById("closeOrderModal");
   const cancelOrder = document.getElementById("cancelOrder");
 
   if (adminToggle) {
@@ -1174,8 +1278,8 @@ function initialize() {
     orderForm.addEventListener("submit", submitOrder);
   }
 
-  if (closeOrderModal) {
-    closeOrderModal.addEventListener("click", closeOrderModal);
+  if (closeOrderModalButton) {
+    closeOrderModalButton.addEventListener("click", closeOrderModal);
   }
 
   if (cancelOrder) {

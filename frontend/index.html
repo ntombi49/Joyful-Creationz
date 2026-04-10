@@ -8,16 +8,44 @@
   </head>
   <body>
     <div class="page-shell">
-      <header>
-        <div>
-          <h1>Joyful Creationz</h1>
-          <p class="subtitle">
-            Discover events, register with confidence, and manage registrations
-            from one friendly dashboard.
-          </p>
+      <header class="site-header">
+        <div class="site-brand">
+          <div class="brand-lockup">
+            <p class="eyebrow brand-wordmark">Joyful Creationz</p>
+            <h1>Build memorable events with a modern platform for creators.</h1>
+            <p class="subtitle">
+              Discover events, register with confidence, and manage your
+              community from one beautiful dashboard.
+            </p>
+          </div>
+          <button id="adminToggle" class="primary-btn">Admin Panel</button>
         </div>
-        <button id="adminToggle" class="primary-btn">Admin Panel</button>
+
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="#events-section">Events</a>
+          <a href="#products-section">Products</a>
+          <a href="#partners-section">Partners</a>
+          <a href="#admin-section" class="nav-secondary">Admin</a>
+        </nav>
       </header>
+
+      <section class="hero-panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Powered by community</p>
+          <h2>
+            Your go-to event platform for creative meetups and product launches.
+          </h2>
+          <p class="hero-text">
+            Clean, easy to explore, and designed to make every registration feel
+            welcoming. Use Joyful Creationz to showcase events, highlight
+            products, and keep your audience coming back.
+          </p>
+          <div class="hero-actions">
+            <a href="#events-section" class="primary-btn">Browse Events</a>
+            <a href="#products-section" class="secondary-btn">See Products</a>
+          </div>
+        </div>
+      </section>
 
       <div id="mainMessage" class="message hidden"></div>
 
@@ -98,6 +126,18 @@
               Date
               <input type="date" id="date" required />
             </label>
+            <label>
+              Image URL or filename
+              <input
+                type="text"
+                id="eventImage"
+                placeholder="Image URL or image filename"
+              />
+            </label>
+            <label>
+              Upload image
+              <input type="file" id="eventImageFile" accept="image/*" />
+            </label>
             <label class="full-width">
               Description
               <textarea
@@ -147,6 +187,10 @@
                 placeholder="Image URL or image filename"
               />
             </label>
+            <label>
+              Upload image
+              <input type="file" id="productImageFile" accept="image/*" />
+            </label>
             <label class="full-width">
               Description
               <textarea
@@ -178,8 +222,16 @@
               />
             </label>
             <label>
-              Logo URL
-              <input type="url" id="partnerLogo" placeholder="Logo URL" />
+              Logo URL or filename
+              <input
+                type="text"
+                id="partnerLogo"
+                placeholder="Logo URL or logo filename"
+              />
+            </label>
+            <label>
+              Upload logo
+              <input type="file" id="partnerLogoFile" accept="image/*" />
             </label>
             <label class="full-width">
               Description
@@ -200,7 +252,7 @@
               </button>
             </div>
           </form>
-          <section id="products-section" class="panel compact-panel">
+          <section id="admin-products-section" class="panel compact-panel">
             <h3>Products</h3>
             <div id="admin-products" class="card-grid"></div>
           </section>
@@ -226,7 +278,7 @@
     <div id="registrationModal" class="modal hidden">
       <div class="modal-card">
         <button id="closeRegistrationModal" class="modal-close" type="button">
-          ×
+          &times;
         </button>
         <h2>Register for <span id="modalEventTitle"></span></h2>
         <div id="modalMessage" class="message hidden"></div>
@@ -274,7 +326,7 @@
     <div id="orderModal" class="modal hidden">
       <div class="modal-card">
         <button id="closeOrderModal" class="modal-close" type="button">
-          ×
+          &times;
         </button>
         <h2>Order <span id="modalProductTitle"></span></h2>
         <div id="orderMessage" class="message hidden"></div>
