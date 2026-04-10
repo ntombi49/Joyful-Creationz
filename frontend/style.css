@@ -251,6 +251,12 @@ header h1 {
   border: 1px solid #f87171;
 }
 
+.registration-status {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
 .hidden {
   display: none !important;
 }

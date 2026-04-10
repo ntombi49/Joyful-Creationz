@@ -34,9 +34,27 @@ db.serialize(() => {
       name TEXT,
       email TEXT,
       phone TEXT,
-      registered_at TEXT DEFAULT CURRENT_TIMESTAMP
+      registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      paid INTEGER DEFAULT 0,
+      ticket_sent INTEGER DEFAULT 0
     )
   `);
+
+  // Add payment tracking columns if they don't exist
+  db.run(
+    `ALTER TABLE registrations ADD COLUMN paid INTEGER DEFAULT 0`,
+    (err) => {
+      if (err && !err.message.includes("duplicate column name"))
+        console.error("Alter table error:", err);
+    },
+  );
+  db.run(
+    `ALTER TABLE registrations ADD COLUMN ticket_sent INTEGER DEFAULT 0`,
+    (err) => {
+      if (err && !err.message.includes("duplicate column name"))
+        console.error("Alter table error:", err);
+    },
+  );
 
   // Products table
   db.run(`
@@ -107,6 +125,19 @@ db.serialize(() => {
       name TEXT NOT NULL,
       description TEXT,
       logo TEXT
+    )
+  `);
+
+  // Tickets table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      registration_id INTEGER UNIQUE,
+      ticket_number TEXT UNIQUE NOT NULL,
+      qr_code TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      sent_at TEXT,
+      scanned INTEGER DEFAULT 0
     )
   `);
 });

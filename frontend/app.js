@@ -1,6 +1,17 @@
-const baseUrl = "http://localhost:3000";
+const baseUrl = window.location.origin;
 const ADMIN_PASSWORD = "joyful123";
 let currentEditEventId = null;
+
+function resolveAssetUrl(src) {
+  if (!src) return "";
+  const trimmed = src.trim();
+  if (!trimmed) return "";
+  if (/^(https?:)?\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("/")) return encodeURI(trimmed);
+  if (trimmed.toLowerCase().startsWith("images/"))
+    return encodeURI(`/${trimmed}`);
+  return encodeURI(`${baseUrl}/images/${trimmed}`);
+}
 
 const mainMessage = document.getElementById("mainMessage");
 const adminMessage = document.getElementById("adminMessage");
@@ -386,7 +397,8 @@ function renderProductCard(product, isAdmin = false) {
 
   const image = document.createElement("img");
   image.src =
-    product.image || "https://via.placeholder.com/150x150?text=No+Image";
+    resolveAssetUrl(product.image) ||
+    "https://via.placeholder.com/150x150?text=No+Image";
   image.alt = product.name;
   image.className = "product-image";
 
@@ -570,7 +582,9 @@ function renderPartnerCard(partner, isAdmin = false) {
   description.className = "partner-description";
 
   const logo = document.createElement("img");
-  logo.src = partner.logo || "https://via.placeholder.com/150x150?text=No+Logo";
+  logo.src =
+    resolveAssetUrl(partner.logo) ||
+    "https://via.placeholder.com/150x150?text=No+Logo";
   logo.alt = partner.name;
   logo.className = "partner-logo";
 
@@ -867,8 +881,50 @@ function renderRegistrationCard(registration) {
   const details = document.createElement("p");
   details.textContent = `${registration.phone} — ${registration.event_name} on ${formatDate(registration.event_date)}`;
 
+  const status = document.createElement("p");
+  status.className = "registration-status";
+  status.innerHTML = `<strong>Status:</strong> ${
+    registration.paid ? "✅ Paid" : "❌ Not Paid"
+  } | ${registration.ticket_sent ? "🎫 Ticket Sent" : "⏳ No Ticket"}`;
+
   const actions = document.createElement("div");
   actions.className = "button-row";
+
+  // Mark as Paid button
+  if (!registration.paid) {
+    const paidBtn = document.createElement("button");
+    paidBtn.type = "button";
+    paidBtn.className = "primary-btn";
+    paidBtn.textContent = "Mark Paid";
+    paidBtn.addEventListener("click", () =>
+      markRegistrationPaid(registration.id),
+    );
+    actions.appendChild(paidBtn);
+  }
+
+  // Send Ticket button
+  if (registration.paid && !registration.ticket_sent) {
+    const ticketBtn = document.createElement("button");
+    ticketBtn.type = "button";
+    ticketBtn.className = "primary-btn";
+    ticketBtn.textContent = "Send Ticket";
+    ticketBtn.addEventListener("click", () =>
+      sendTicketToRegistrant(registration.id),
+    );
+    actions.appendChild(ticketBtn);
+  }
+
+  // Resend Ticket button
+  if (registration.paid && registration.ticket_sent) {
+    const resendBtn = document.createElement("button");
+    resendBtn.type = "button";
+    resendBtn.className = "secondary-btn";
+    resendBtn.textContent = "Resend Ticket";
+    resendBtn.addEventListener("click", () =>
+      resendTicketToRegistrant(registration.id),
+    );
+    actions.appendChild(resendBtn);
+  }
 
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
@@ -879,8 +935,94 @@ function renderRegistrationCard(registration) {
   );
 
   actions.appendChild(deleteBtn);
-  card.append(title, details, actions);
+  card.append(title, details, status, actions);
   return card;
+}
+
+async function markRegistrationPaid(registrationId) {
+  const confirmed = confirm("Mark this registration as paid?");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/registrations/${registrationId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paid: 1 }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to update registration");
+    }
+
+    showMessage(
+      adminMessage,
+      "Registration marked as paid. Now you can send the ticket!",
+      "success",
+    );
+    loadRegistrations();
+  } catch (err) {
+    console.error("Error updating registration:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Failed to mark as paid.",
+      "error",
+    );
+  }
+}
+
+async function sendTicketToRegistrant(registrationId) {
+  try {
+    const res = await fetch(`${baseUrl}/api/tickets/send/${registrationId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to send ticket");
+    }
+
+    showMessage(adminMessage, data.message, "success");
+    loadRegistrations();
+  } catch (err) {
+    console.error("Error sending ticket:", err);
+    showMessage(adminMessage, err.message || "Failed to send ticket.", "error");
+  }
+}
+
+async function resendTicketToRegistrant(registrationId) {
+  // Get the ticket ID first
+  try {
+    const ticketRes = await fetch(`${baseUrl}/api/tickets`);
+    const tickets = await ticketRes.json();
+    const ticket = tickets.find((t) => t.registration_id === registrationId);
+
+    if (!ticket) {
+      showMessage(adminMessage, "Ticket not found.", "error");
+      return;
+    }
+
+    const res = await fetch(`${baseUrl}/api/tickets/resend/${ticket.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to resend ticket");
+    }
+
+    showMessage(adminMessage, data.message, "success");
+    loadRegistrations();
+  } catch (err) {
+    console.error("Error resending ticket:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Failed to resend ticket.",
+      "error",
+    );
+  }
 }
 
 async function deleteRegistration(registrationId) {

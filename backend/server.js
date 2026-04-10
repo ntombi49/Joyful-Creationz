@@ -17,6 +17,7 @@ app.use("/api/orders", require("./routes/orders"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/partners", require("./routes/partners"));
 app.use("/api/registrations", require("./routes/registrations"));
+app.use("/api/tickets", require("./routes/tickets"));
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 app.get("/", (req, res) => {
