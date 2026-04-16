@@ -13,6 +13,24 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+function ensureColumn(table, column, definition) {
+  db.all(`PRAGMA table_info(${table})`, [], (err, columns) => {
+    if (err) {
+      console.error(`Error checking ${table}.${column}:`, err.message);
+      return;
+    }
+
+    const hasColumn = columns.some((existingColumn) => existingColumn.name === column);
+    if (!hasColumn) {
+      db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`, (alterErr) => {
+        if (alterErr) {
+          console.error(`Error adding ${table}.${column}:`, alterErr.message);
+        }
+      });
+    }
+  });
+}
+
 // Create tables if they don't exist
 db.serialize(() => {
   // Events table
@@ -22,10 +40,13 @@ db.serialize(() => {
       name TEXT NOT NULL,
       description TEXT,
       date TEXT,
+      time TEXT,
       location TEXT,
       image TEXT
     )
   `);
+
+  ensureColumn("events", "time", "TEXT");
 
   // Registrations table
   db.run(`

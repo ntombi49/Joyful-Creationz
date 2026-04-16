@@ -43,12 +43,18 @@ async function sendTicketViaWhatsApp({
   phone,
   ticketNumber,
   eventName,
+  eventDate,
+  eventTime,
+  eventLocation,
   registrationName,
   qrBuffer,
 }) {
   return sendTicketMessage({
     to: phone,
     eventName,
+    eventDate,
+    eventTime,
+    eventLocation,
     registrantName: registrationName,
     ticketNumber,
     qrBuffer,
@@ -76,7 +82,7 @@ router.post("/send/:registrationId", async (req, res) => {
 
   try {
     db.get(
-      `SELECT r.*, e.name as event_name FROM registrations r
+      `SELECT r.*, e.name as event_name, e.date as event_date, e.time as event_time, e.location as event_location FROM registrations r
        JOIN events e ON r.event_id = e.id WHERE r.id = ?`,
       [registrationId],
       async (err, registration) => {
@@ -111,6 +117,9 @@ router.post("/send/:registrationId", async (req, res) => {
                       phone: registration.phone,
                       ticketNumber: foundTicket.ticket_number,
                       eventName: registration.event_name,
+                      eventDate: registration.event_date,
+                      eventTime: registration.event_time,
+                      eventLocation: registration.event_location,
                       registrationName: registration.name,
                       qrBuffer: qrArtifacts.buffer,
                     });
@@ -159,7 +168,7 @@ router.post("/send/:registrationId", async (req, res) => {
                   registrationId,
                   ticketNumber,
                   qrArtifacts.dataUrl,
-                  new Date().toISOString(),
+                  null,
                 ],
                 async (insertErr) => {
                   if (insertErr) {
@@ -171,22 +180,38 @@ router.post("/send/:registrationId", async (req, res) => {
                       phone: registration.phone,
                       ticketNumber,
                       eventName: registration.event_name,
+                      eventDate: registration.event_date,
+                      eventTime: registration.event_time,
+                      eventLocation: registration.event_location,
                       registrationName: registration.name,
                       qrBuffer: qrArtifacts.buffer,
                     });
 
+                    const sentAt = new Date().toISOString();
                     db.run(
-                      "UPDATE registrations SET ticket_sent = 1 WHERE id = ?",
-                      [registrationId],
-                      (registrationErr) => {
-                        if (registrationErr) {
+                      "UPDATE tickets SET sent_at = ? WHERE registration_id = ?",
+                      [sentAt, registrationId],
+                      (ticketUpdateErr) => {
+                        if (ticketUpdateErr) {
                           return res
                             .status(500)
-                            .json({ error: registrationErr.message });
+                            .json({ error: ticketUpdateErr.message });
                         }
-                        res.json({
-                          message: "Ticket created and sent successfully!",
-                        });
+
+                        db.run(
+                          "UPDATE registrations SET ticket_sent = 1 WHERE id = ?",
+                          [registrationId],
+                          (registrationErr) => {
+                            if (registrationErr) {
+                              return res
+                                .status(500)
+                                .json({ error: registrationErr.message });
+                            }
+                            res.json({
+                              message: "Ticket created and sent successfully!",
+                            });
+                          },
+                        );
                       },
                     );
                   } catch (whatsappErr) {
@@ -219,7 +244,7 @@ router.post("/resend/:ticketId", async (req, res) => {
   const { ticketId } = req.params;
 
   db.get(
-    `SELECT t.*, r.name, r.phone, e.name as event_name FROM tickets t
+    `SELECT t.*, r.name, r.phone, e.name as event_name, e.date as event_date, e.time as event_time, e.location as event_location FROM tickets t
      JOIN registrations r ON t.registration_id = r.id
      JOIN events e ON r.event_id = e.id WHERE t.id = ?`,
     [ticketId],
@@ -234,6 +259,9 @@ router.post("/resend/:ticketId", async (req, res) => {
           phone: ticket.phone,
           ticketNumber: ticket.ticket_number,
           eventName: ticket.event_name,
+          eventDate: ticket.event_date,
+          eventTime: ticket.event_time,
+          eventLocation: ticket.event_location,
           registrationName: ticket.name,
           qrBuffer: qrArtifacts.buffer,
         });

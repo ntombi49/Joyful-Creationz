@@ -26,10 +26,17 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", validateEventInput, (req, res) => {
-  const { name, description, date, location, image } = req.body;
+  const { name, description, date, time, location, image } = req.body;
   db.run(
-    "INSERT INTO events (name, description, date, location, image) VALUES (?, ?, ?, ?, ?)",
-    [name.trim(), description || "", date.trim(), location.trim(), image || ""],
+    "INSERT INTO events (name, description, date, time, location, image) VALUES (?, ?, ?, ?, ?, ?)",
+    [
+      name.trim(),
+      description || "",
+      date.trim(),
+      time ? time.trim() : "",
+      location.trim(),
+      image || "",
+    ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({
@@ -42,10 +49,18 @@ router.post("/", validateEventInput, (req, res) => {
 
 router.put("/:id", validateEventInput, (req, res) => {
   const { id } = req.params;
-  const { name, description, date, location, image } = req.body;
+  const { name, description, date, time, location, image } = req.body;
   db.run(
-    "UPDATE events SET name = ?, description = ?, date = ?, location = ?, image = ? WHERE id = ?",
-    [name.trim(), description || "", date.trim(), location.trim(), image || "", id],
+    "UPDATE events SET name = ?, description = ?, date = ?, time = ?, location = ?, image = ? WHERE id = ?",
+    [
+      name.trim(),
+      description || "",
+      date.trim(),
+      time ? time.trim() : "",
+      location.trim(),
+      image || "",
+      id,
+    ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0)

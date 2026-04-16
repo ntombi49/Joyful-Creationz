@@ -46,6 +46,95 @@ function ensureConfigured() {
   }
 }
 
+function formatEventDate(value) {
+  if (!value) {
+    return "TBA";
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.valueOf())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(parsedDate);
+}
+
+function formatEventTime(value) {
+  if (!value) {
+    return "TBA";
+  }
+
+  const rawValue = String(value).trim();
+  if (!rawValue) {
+    return "TBA";
+  }
+
+  const parsedTime = new Date(`1970-01-01T${rawValue}`);
+  if (!Number.isNaN(parsedTime.valueOf())) {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(parsedTime);
+  }
+
+  return rawValue;
+}
+
+function buildTicketMessage({
+  registrantName,
+  eventName,
+  eventDate,
+  eventTime,
+  eventLocation,
+  ticketNumber,
+}) {
+  const formattedDate = formatEventDate(eventDate);
+  const formattedTime = formatEventTime(eventTime);
+  const formattedLocation = eventLocation ? String(eventLocation).trim() : "TBA";
+
+  return [
+    "EVENT TICKET",
+    "",
+    `Hello ${registrantName},`,
+    "",
+    `Your ticket for ${eventName} is confirmed.`,
+    "",
+    "Event Details",
+    `Event: ${eventName}`,
+    `Date: ${formattedDate}`,
+    `Time: ${formattedTime}`,
+    `Location: ${formattedLocation}`,
+    "",
+    "Ticket Information",
+    `Ticket ID: ${ticketNumber}`,
+    "",
+    "Please present this ticket at the entrance, either printed or on your phone.",
+    "",
+    "We look forward to welcoming you.",
+  ].join("\n");
+}
+
+function buildTicketCaption({
+  eventName,
+  eventDate,
+  eventTime,
+  eventLocation,
+  ticketNumber,
+}) {
+  return [
+    eventName,
+    formatEventDate(eventDate),
+    formatEventTime(eventTime),
+    eventLocation ? String(eventLocation).trim() : "TBA",
+    `Ticket ID: ${ticketNumber}`,
+  ].join("\n");
+}
+
 function apiUrl(path) {
   ensureConfigured();
   return `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}${path}`;
@@ -198,6 +287,9 @@ async function sendImageMessage(to, imageId, caption) {
 async function sendTicketMessage({
   to,
   eventName,
+  eventDate,
+  eventTime,
+  eventLocation,
   registrantName,
   ticketNumber,
   qrBuffer,
@@ -212,6 +304,9 @@ async function sendTicketMessage({
       const response = await sendTemplateMessage(recipient, templateName, [
         registrantName,
         eventName,
+        formatEventDate(eventDate),
+        formatEventTime(eventTime),
+        eventLocation || "TBA",
         ticketNumber,
       ]);
       results.push({ channel: "template", response });
@@ -230,7 +325,13 @@ async function sendTicketMessage({
     const response = await sendImageMessage(
       recipient,
       mediaId,
-      `Your ticket for ${eventName}. Ticket #: ${ticketNumber}`,
+      buildTicketCaption({
+        eventName,
+        eventDate,
+        eventTime,
+        eventLocation,
+        ticketNumber,
+      }),
     );
     results.push({ channel: "image", response });
   } catch (error) {
@@ -240,7 +341,14 @@ async function sendTicketMessage({
   try {
     const response = await sendTextMessage(
       recipient,
-      `Your ticket for ${eventName} is ready. Ticket #: ${ticketNumber}`,
+      buildTicketMessage({
+        registrantName,
+        eventName,
+        eventDate,
+        eventTime,
+        eventLocation,
+        ticketNumber,
+      }),
     );
     results.push({ channel: "text", response });
   } catch (error) {
