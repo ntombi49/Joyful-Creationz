@@ -142,7 +142,7 @@ function renderEventCard(event) {
 
   const meta = document.createElement("p");
   meta.className = "event-meta";
-  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} • <strong>Location:</strong> ${event.location || "TBA"}`;
+  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} | <strong>Location:</strong> ${event.location || "TBA"}`;
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -853,14 +853,14 @@ function renderOrderCard(order) {
 
   const title = document.createElement("p");
   title.className = "order-title";
-  title.innerHTML = `<strong>${order.customer_name}</strong> • ${order.customer_email}`;
+  title.innerHTML = `<strong>${order.customer_name}</strong> | ${order.customer_email}`;
 
   const details = document.createElement("p");
   details.textContent = `${order.product_name} x${order.quantity} - ${formatCurrency(order.total)} (${order.status})`;
 
   const meta = document.createElement("p");
   meta.className = "order-meta";
-  meta.textContent = `Ordered on ${formatDate(order.order_date)} • Phone: ${order.customer_phone}`;
+  meta.textContent = `Ordered on ${formatDate(order.order_date)} | Phone: ${order.customer_phone}`;
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -980,16 +980,16 @@ function renderRegistrationCard(registration) {
 
   const title = document.createElement("p");
   title.className = "registration-title";
-  title.innerHTML = `<strong>${registration.name}</strong> • ${registration.email}`;
+  title.innerHTML = `<strong>${registration.name}</strong> | ${registration.email}`;
 
   const details = document.createElement("p");
-  details.textContent = `${registration.phone} — ${registration.event_name} on ${formatDate(registration.event_date)}`;
+  details.textContent = `${registration.phone} - ${registration.event_name} on ${formatDate(registration.event_date)}`;
 
   const status = document.createElement("p");
   status.className = "registration-status";
   status.innerHTML = `<strong>Status:</strong> ${
-    registration.paid ? "✅ Paid" : "❌ Not Paid"
-  } | ${registration.ticket_sent ? "🎫 Ticket Sent" : "⏳ No Ticket"}`;
+    registration.paid ? "Paid" : "Not Paid"
+  } | ${registration.ticket_sent ? "Ticket Sent" : "No Ticket"}`;
 
   const actions = document.createElement("div");
   actions.className = "button-row";

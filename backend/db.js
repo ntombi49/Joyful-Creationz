@@ -27,11 +27,6 @@ db.serialize(() => {
     )
   `);
 
-  db.run(`ALTER TABLE events ADD COLUMN image TEXT`, (err) => {
-    if (err && !err.message.includes("duplicate column name"))
-      console.error("Alter table error:", err);
-  });
-
   // Registrations table
   db.run(`
     CREATE TABLE IF NOT EXISTS registrations (
@@ -45,22 +40,6 @@ db.serialize(() => {
       ticket_sent INTEGER DEFAULT 0
     )
   `);
-
-  // Add payment tracking columns if they don't exist
-  db.run(
-    `ALTER TABLE registrations ADD COLUMN paid INTEGER DEFAULT 0`,
-    (err) => {
-      if (err && !err.message.includes("duplicate column name"))
-        console.error("Alter table error:", err);
-    },
-  );
-  db.run(
-    `ALTER TABLE registrations ADD COLUMN ticket_sent INTEGER DEFAULT 0`,
-    (err) => {
-      if (err && !err.message.includes("duplicate column name"))
-        console.error("Alter table error:", err);
-    },
-  );
 
   // Products table
   db.run(`
@@ -98,31 +77,6 @@ db.serialize(() => {
       status TEXT DEFAULT 'pending'
     )
   `);
-
-  // Add new columns if they don't exist (for existing databases)
-  db.run(`ALTER TABLE orders ADD COLUMN customer_name TEXT`, (err) => {
-    if (err && !err.message.includes("duplicate column name"))
-      console.error("Alter table error:", err);
-  });
-  db.run(`ALTER TABLE orders ADD COLUMN customer_email TEXT`, (err) => {
-    if (err && !err.message.includes("duplicate column name"))
-      console.error("Alter table error:", err);
-  });
-  db.run(`ALTER TABLE orders ADD COLUMN customer_phone TEXT`, (err) => {
-    if (err && !err.message.includes("duplicate column name"))
-      console.error("Alter table error:", err);
-  });
-  db.run(`ALTER TABLE orders ADD COLUMN total REAL`, (err) => {
-    if (err && !err.message.includes("duplicate column name"))
-      console.error("Alter table error:", err);
-  });
-  db.run(
-    `ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending'`,
-    (err) => {
-      if (err && !err.message.includes("duplicate column name"))
-        console.error("Alter table error:", err);
-    },
-  );
 
   // Partners table
   db.run(`

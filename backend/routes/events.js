@@ -2,36 +2,55 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+function validateEventInput(req, res, next) {
+  const { name, date, location } = req.body;
+
+  if (!name || !name.trim()) {
+    return res.status(400).json({ message: "Event name is required." });
+  }
+  if (!date || !date.trim()) {
+    return res.status(400).json({ message: "Event date is required." });
+  }
+  if (!location || !location.trim()) {
+    return res.status(400).json({ message: "Event location is required." });
+  }
+
+  next();
+}
+
 router.get("/", (req, res) => {
-  db.all("SELECT * FROM events", [], (err, rows) => {
+  db.all("SELECT * FROM events ORDER BY date ASC", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
-router.post("/", (req, res) => {
+router.post("/", validateEventInput, (req, res) => {
   const { name, description, date, location, image } = req.body;
   db.run(
     "INSERT INTO events (name, description, date, location, image) VALUES (?, ?, ?, ?, ?)",
-    [name, description, date, location, image],
+    [name.trim(), description || "", date.trim(), location.trim(), image || ""],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ id: this.lastID, name, date, image });
+      res.json({
+        message: "Event created successfully.",
+        eventId: this.lastID,
+      });
     },
   );
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", validateEventInput, (req, res) => {
   const { id } = req.params;
   const { name, description, date, location, image } = req.body;
   db.run(
     "UPDATE events SET name = ?, description = ?, date = ?, location = ?, image = ? WHERE id = ?",
-    [name, description, date, location, image, id],
+    [name.trim(), description || "", date.trim(), location.trim(), image || "", id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0)
-        return res.status(404).json({ message: "Event not found" });
-      res.json({ message: "Event updated successfully" });
+        return res.status(404).json({ message: "Event not found." });
+      res.json({ message: "Event updated successfully." });
     },
   );
 });
@@ -41,8 +60,8 @@ router.delete("/:id", (req, res) => {
   db.run("DELETE FROM events WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0)
-      return res.status(404).json({ message: "Event not found" });
-    res.json({ message: "Event deleted successfully" });
+      return res.status(404).json({ message: "Event not found." });
+    res.json({ message: "Event removed successfully." });
   });
 });
 

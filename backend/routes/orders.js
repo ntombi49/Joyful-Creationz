@@ -2,6 +2,39 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
+function validateOrderInput(req, res, next) {
+  const { product_id, quantity, customer_name, customer_email, customer_phone } =
+    req.body;
+
+  if (!product_id) {
+    return res.status(400).json({ message: "Product ID is required." });
+  }
+
+  const numericQuantity = Number(quantity);
+  if (!Number.isInteger(numericQuantity) || numericQuantity < 1) {
+    return res.status(400).json({ message: "Quantity must be at least 1." });
+  }
+
+  if (!customer_name || !customer_name.trim()) {
+    return res.status(400).json({ message: "Customer name is required." });
+  }
+  if (
+    !customer_email ||
+    !customer_email.trim() ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer_email)
+  ) {
+    return res
+      .status(400)
+      .json({ message: "A valid customer email is required." });
+  }
+  if (!customer_phone || !customer_phone.trim()) {
+    return res.status(400).json({ message: "Customer phone is required." });
+  }
+
+  req.body.quantity = numericQuantity;
+  next();
+}
+
 router.get("/", (req, res) => {
   db.all(
     `
@@ -18,7 +51,7 @@ router.get("/", (req, res) => {
   );
 });
 
-router.post("/", async (req, res) => {
+router.post("/", validateOrderInput, async (req, res) => {
   const {
     product_id,
     quantity,
@@ -27,14 +60,14 @@ router.post("/", async (req, res) => {
     customer_phone,
   } = req.body;
 
-  // Get product details
   db.get(
     "SELECT name, price FROM products WHERE id = ?",
     [product_id],
     async (err, product) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (!product)
-        return res.status(404).json({ message: "Product not found" });
+      if (!product) {
+        return res.status(404).json({ message: "Product not found." });
+      }
 
       const total = product.price * quantity;
 
@@ -43,24 +76,22 @@ router.post("/", async (req, res) => {
         [
           product_id,
           quantity,
-          customer_name,
-          customer_email,
-          customer_phone,
+          customer_name.trim(),
+          customer_email.trim(),
+          customer_phone.trim(),
           total,
         ],
-        async function (err) {
-          if (err) return res.status(500).json({ error: err.message });
+        async function (runErr) {
+          if (runErr) return res.status(500).json({ error: runErr.message });
 
-          // Send WhatsApp notification
           try {
-            const message = `🛒 New Order!\n\nProduct: ${product.name}\nQuantity: ${quantity}\nTotal: $${total}\n\nCustomer: ${customer_name}\nEmail: ${customer_email}\nPhone: ${customer_phone}`;
+            const message = `New Order!\n\nProduct: ${product.name}\nQuantity: ${quantity}\nTotal: R${total}\n\nCustomer: ${customer_name}\nEmail: ${customer_email}\nPhone: ${customer_phone}`;
             await sendWhatsAppMessage(message);
           } catch (whatsappErr) {
             console.error("WhatsApp send failed:", whatsappErr);
-            // Don't fail the order if WhatsApp fails
           }
 
-          res.json({ id: this.lastID, message: "Order placed successfully" });
+          res.json({ id: this.lastID, message: "Order placed successfully." });
         },
       );
     },
@@ -70,14 +101,16 @@ router.post("/", async (req, res) => {
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const normalizedStatus = status === "completed" ? "completed" : "pending";
+
   db.run(
     "UPDATE orders SET status = ? WHERE id = ?",
-    [status, id],
+    [normalizedStatus, id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0)
-        return res.status(404).json({ message: "Order not found" });
-      res.json({ message: "Order updated successfully" });
+        return res.status(404).json({ message: "Order not found." });
+      res.json({ message: "Order updated successfully." });
     },
   );
 });
@@ -87,27 +120,22 @@ router.delete("/:id", (req, res) => {
   db.run("DELETE FROM orders WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0)
-      return res.status(404).json({ message: "Order not found" });
-    res.json({ message: "Order deleted successfully" });
+      return res.status(404).json({ message: "Order not found." });
+    res.json({ message: "Order removed successfully." });
   });
 });
 
-// WhatsApp sending function using CallMeBot (free service)
 async function sendWhatsAppMessage(message) {
-  const phoneNumber = process.env.ADMIN_PHONE || "1234567890"; // Replace with admin phone
-  const apiKey = process.env.CALLMEBOT_API_KEY || "your-api-key"; // Get from https://www.callmebot.com/
+  const phoneNumber = process.env.ADMIN_PHONE || "1234567890";
+  const apiKey = process.env.CALLMEBOT_API_KEY || "your-api-key";
 
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(message)}&apikey=${apiKey}`;
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(
+    message,
+  )}&apikey=${apiKey}`;
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`WhatsApp API error: ${response.status}`);
-    }
-    console.log("WhatsApp message sent successfully");
-  } catch (error) {
-    console.error("Failed to send WhatsApp:", error);
-    throw error;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`WhatsApp API error: ${response.status}`);
   }
 }
 

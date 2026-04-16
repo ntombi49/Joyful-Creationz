@@ -52,12 +52,31 @@ Make sure your computer's firewall allows incoming traffic on port `3000`.
 
 - `GET /api/events`
 - `POST /api/events`
+- `PUT /api/events/:id`
+- `DELETE /api/events/:id`
 - `GET /api/products`
 - `POST /api/products`
+- `PUT /api/products/:id`
+- `DELETE /api/products/:id`
 - `GET /api/orders`
 - `POST /api/orders`
+- `PUT /api/orders/:id`
+- `DELETE /api/orders/:id`
 - `GET /api/users`
 - `POST /api/users`
+- `GET /api/partners`
+- `POST /api/partners`
+- `PUT /api/partners/:id`
+- `DELETE /api/partners/:id`
+- `GET /api/registrations`
+- `POST /api/registrations`
+- `PUT /api/registrations/:id`
+- `DELETE /api/registrations/:id`
+- `GET /api/registrations/export`
+- `GET /api/tickets`
+- `POST /api/tickets/send/:registrationId`
+- `POST /api/tickets/resend/:ticketId`
+- `POST /api/uploads`
 
 ## Notes
 
