@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { sendAdminAlert } = require("../services/whatsapp");
 
 function validateOrderInput(req, res, next) {
   const { product_id, quantity, customer_name, customer_email, customer_phone } =
@@ -85,8 +86,12 @@ router.post("/", validateOrderInput, async (req, res) => {
           if (runErr) return res.status(500).json({ error: runErr.message });
 
           try {
-            const message = `New Order!\n\nProduct: ${product.name}\nQuantity: ${quantity}\nTotal: R${total}\n\nCustomer: ${customer_name}\nEmail: ${customer_email}\nPhone: ${customer_phone}`;
-            await sendWhatsAppMessage(message);
+            const adminTo =
+              process.env.WHATSAPP_ADMIN_TO || process.env.ADMIN_PHONE;
+            if (adminTo) {
+              const message = `New Order!\n\nProduct: ${product.name}\nQuantity: ${quantity}\nTotal: R${total}\n\nCustomer: ${customer_name}\nEmail: ${customer_email}\nPhone: ${customer_phone}`;
+              await sendAdminAlert(adminTo, message);
+            }
           } catch (whatsappErr) {
             console.error("WhatsApp send failed:", whatsappErr);
           }
@@ -124,19 +129,5 @@ router.delete("/:id", (req, res) => {
     res.json({ message: "Order removed successfully." });
   });
 });
-
-async function sendWhatsAppMessage(message) {
-  const phoneNumber = process.env.ADMIN_PHONE || "1234567890";
-  const apiKey = process.env.CALLMEBOT_API_KEY || "your-api-key";
-
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(
-    message,
-  )}&apikey=${apiKey}`;
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`WhatsApp API error: ${response.status}`);
-  }
-}
 
 module.exports = router;

@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const QRCode = require("qrcode");
+const { sendTicketMessage } = require("../services/whatsapp");
 
 function generateTicketNumber() {
   return `JC-TICKET-${Date.now()}-${Math.random()
@@ -10,63 +11,49 @@ function generateTicketNumber() {
     .toUpperCase()}`;
 }
 
-async function generateQRCode(ticketNumber) {
+async function generateQRCodeArtifacts(ticketNumber) {
   try {
-    return await QRCode.toDataURL(ticketNumber, {
-      width: 300,
-      margin: 2,
-      color: {
-        dark: "#000000",
-        light: "#FFFFFF",
-      },
-    });
+    const [dataUrl, buffer] = await Promise.all([
+      QRCode.toDataURL(ticketNumber, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      }),
+      QRCode.toBuffer(ticketNumber, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      }),
+    ]);
+
+    return { dataUrl, buffer };
   } catch (err) {
     console.error("QR Code generation error:", err);
     throw err;
   }
 }
 
-async function sendTicketViaWhatsApp(
+async function sendTicketViaWhatsApp({
   phone,
   ticketNumber,
   eventName,
   registrationName,
-  _qrCodeUrl,
-) {
-  let phoneNumber = String(phone || "").trim();
-  const apiKey = process.env.CALLMEBOT_API_KEY;
-  const defaultCountryCode = process.env.WHATSAPP_COUNTRY_CODE || "27";
-
-  if (!phoneNumber) {
-    throw new Error("Registrant phone number is missing");
-  }
-
-  if (phoneNumber.startsWith("+")) {
-    phoneNumber = phoneNumber.slice(1);
-  }
-
-  if (phoneNumber.startsWith("0")) {
-    phoneNumber = `${defaultCountryCode}${phoneNumber.slice(1)}`;
-  }
-
-  if (!/^[0-9]+$/.test(phoneNumber)) {
-    throw new Error("Registrant phone number must contain only digits");
-  }
-
-  const message = `Your Event Ticket!\n\nEvent: ${eventName}\nName: ${registrationName}\nTicket #: ${ticketNumber}\n\nPlease save this message. Show the ticket QR code at the event entrance.`;
-  const url = `https://api.callmebot.com/whatsapp.php?phone=${phoneNumber}&text=${encodeURIComponent(
-    message,
-  )}&apikey=${apiKey}`;
-
-  const response = await fetch(url);
-  const responseText = await response.text();
-  if (!response.ok) {
-    throw new Error(
-      `WhatsApp API error: ${response.status} ${response.statusText} - ${responseText}`,
-    );
-  }
-
-  return true;
+  qrBuffer,
+}) {
+  return sendTicketMessage({
+    to: phone,
+    eventName,
+    registrantName: registrationName,
+    ticketNumber,
+    qrBuffer,
+    templateName: process.env.WHATSAPP_TICKET_TEMPLATE_NAME || "",
+  });
 }
 
 router.get("/", (req, res) => {
@@ -102,7 +89,9 @@ router.post("/send/:registrationId", async (req, res) => {
           "SELECT id FROM tickets WHERE registration_id = ?",
           [registrationId],
           async (ticketErr, existingTicket) => {
-            if (ticketErr) return res.status(500).json({ error: ticketErr.message });
+            if (ticketErr) {
+              return res.status(500).json({ error: ticketErr.message });
+            }
 
             if (existingTicket) {
               db.get(
@@ -114,13 +103,17 @@ router.post("/send/:registrationId", async (req, res) => {
                   }
 
                   try {
-                    await sendTicketViaWhatsApp(
-                      registration.phone,
+                    const qrArtifacts = await generateQRCodeArtifacts(
                       foundTicket.ticket_number,
-                      registration.event_name,
-                      registration.name,
-                      foundTicket.qr_code,
                     );
+
+                    await sendTicketViaWhatsApp({
+                      phone: registration.phone,
+                      ticketNumber: foundTicket.ticket_number,
+                      eventName: registration.event_name,
+                      registrationName: registration.name,
+                      qrBuffer: qrArtifacts.buffer,
+                    });
 
                     db.run(
                       "UPDATE tickets SET sent_at = ? WHERE registration_id = ?",
@@ -158,22 +151,29 @@ router.post("/send/:registrationId", async (req, res) => {
 
             try {
               const ticketNumber = generateTicketNumber();
-              const qrCode = await generateQRCode(ticketNumber);
+              const qrArtifacts = await generateQRCodeArtifacts(ticketNumber);
 
               db.run(
                 "INSERT INTO tickets (registration_id, ticket_number, qr_code, sent_at) VALUES (?, ?, ?, ?)",
-                [registrationId, ticketNumber, qrCode, new Date().toISOString()],
+                [
+                  registrationId,
+                  ticketNumber,
+                  qrArtifacts.dataUrl,
+                  new Date().toISOString(),
+                ],
                 async (insertErr) => {
-                  if (insertErr) return res.status(500).json({ error: insertErr.message });
+                  if (insertErr) {
+                    return res.status(500).json({ error: insertErr.message });
+                  }
 
                   try {
-                    await sendTicketViaWhatsApp(
-                      registration.phone,
+                    await sendTicketViaWhatsApp({
+                      phone: registration.phone,
                       ticketNumber,
-                      registration.event_name,
-                      registration.name,
-                      qrCode,
-                    );
+                      eventName: registration.event_name,
+                      registrationName: registration.name,
+                      qrBuffer: qrArtifacts.buffer,
+                    });
 
                     db.run(
                       "UPDATE registrations SET ticket_sent = 1 WHERE id = ?",
@@ -228,13 +228,15 @@ router.post("/resend/:ticketId", async (req, res) => {
       if (!ticket) return res.status(404).json({ message: "Ticket not found." });
 
       try {
-        await sendTicketViaWhatsApp(
-          ticket.phone,
-          ticket.ticket_number,
-          ticket.event_name,
-          ticket.name,
-          ticket.qr_code,
-        );
+        const qrArtifacts = await generateQRCodeArtifacts(ticket.ticket_number);
+
+        await sendTicketViaWhatsApp({
+          phone: ticket.phone,
+          ticketNumber: ticket.ticket_number,
+          eventName: ticket.event_name,
+          registrationName: ticket.name,
+          qrBuffer: qrArtifacts.buffer,
+        });
 
         db.run(
           "UPDATE tickets SET sent_at = ? WHERE id = ?",
