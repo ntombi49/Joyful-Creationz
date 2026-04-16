@@ -105,18 +105,19 @@ header {
 }
 
 .brand-lockup {
-  max-width: 760px;
+  max-width: 900px;
 }
 
 .brand-wordmark {
   margin: 0;
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.45em;
+  font-family: "Quicksand", sans-serif;
+  font-size: clamp(2.6rem, 4vw, 3.6rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.05;
   color: var(--primary);
   text-transform: uppercase;
-  text-shadow: 0 8px 24px rgba(184, 79, 43, 0.2);
+  text-shadow: 0 12px 30px rgba(184, 79, 43, 0.25);
   display: block;
 }
 
@@ -129,10 +130,11 @@ header h1,
 }
 
 header h1 {
-  margin-top: 10px;
-  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  margin-top: 20px;
+  font-size: clamp(1.8rem, 4vw, 2.5rem); /* Reduced size */
   color: var(--text);
-  max-width: 40ch;
+  max-width: 45ch; /* Widened to let the sentence sit on fewer lines */
+  line-height: 1.2;
 }
 
 .eyebrow {
@@ -145,12 +147,12 @@ header h1 {
 }
 
 .subtitle {
-  margin: 18px 0 0;
+  margin: 12px 0 0;
   color: var(--muted);
-  line-height: 1.8;
-  max-width: 58ch;
-  font-size: 0.9rem;
-  opacity: 0.8;
+  line-height: 1.6;
+  max-width: 60ch;
+  font-size: 0.95rem; /* Reduced from 1.1rem */
+  opacity: 0.85;
 }
 
 .site-nav {
@@ -399,12 +401,15 @@ main {
 .partner-card img, 
 .partner-logo {
   width: 100%;
-  height: 220px;
+  height: 180px; /* This brings the small, uniform size back */
   border-radius: 20px;
-  object-fit: cover;
+  object-fit: contain; /* This ensures the logo/shirt isn't 'ruined' or stretched */
   background: #ffffff;
-  padding: 0;
+  padding: 10px; /* Adds a little breathing room inside the white box */
+  display: block;
 }
+
+/* ... (Keep the rest of the file exactly as it was) ... */
 
 .event-card h3,
 .product-card h4,
@@ -600,11 +605,11 @@ main {
 
 @media (max-width: 720px) {
   header h1 {
-    font-size: clamp(2.5rem, 14vw, 4rem);
+    font-size: clamp(2rem, 10vw, 3rem);
   }
   .brand-wordmark {
-    letter-spacing: 0.22em;
-    font-size: 1.8rem;
+    letter-spacing: 0.1em;
+    font-size: clamp(2rem, 12vw, 4rem);
   }
   .site-brand,
   .admin-actions,

@@ -1,4 +1,4 @@
-const express = require("express");
+  const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const QRCode = require("qrcode");
@@ -19,7 +19,7 @@ async function generateQRCode(ticketNumber) {
         dark: "#000000",
         light: "#FFFFFF",
       },
-    });
+    }); 
     return qrCode;
   } catch (err) {
     console.error("QR Code generation error:", err);
