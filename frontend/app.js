@@ -67,6 +67,20 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatTime(value) {
+  if (!value) return "TBA";
+  const rawTime = String(value).trim();
+  if (!rawTime) return "TBA";
+
+  const parsedTime = new Date(`1970-01-01T${rawTime}`);
+  if (Number.isNaN(parsedTime.valueOf())) return rawTime;
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsedTime);
+}
+
 function formatCurrency(value) {
   const amount = Number(value);
   if (Number.isNaN(amount)) return `R ${value}`;
@@ -142,7 +156,7 @@ function renderEventCard(event) {
 
   const meta = document.createElement("p");
   meta.className = "event-meta";
-  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} | <strong>Location:</strong> ${event.location || "TBA"}`;
+  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} | <strong>Time:</strong> ${formatTime(event.time)} | <strong>Location:</strong> ${event.location || "TBA"}`;
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -315,6 +329,7 @@ function fillEventForm(event) {
   document.getElementById("name").value = event.name;
   document.getElementById("location").value = event.location;
   document.getElementById("date").value = event.date;
+  document.getElementById("time").value = event.time || "";
   document.getElementById("eventImage").value = event.image || "";
   document.getElementById("eventImageFile").value = "";
   document.getElementById("description").value = event.description || "";
@@ -342,16 +357,17 @@ async function submitEventForm(e) {
 
   const name = document.getElementById("name").value.trim();
   const date = document.getElementById("date").value;
+  const time = document.getElementById("time").value;
   const location = document.getElementById("location").value.trim();
   const imageInput = document.getElementById("eventImage").value.trim();
   const imageFile = document.getElementById("eventImageFile").files[0];
   let image = imageInput;
   const description = document.getElementById("description").value.trim();
 
-  if (!name || !date || !location) {
+  if (!name || !date || !time || !location) {
     showMessage(
       adminMessage,
-      "Name, date, and location are required.",
+      "Name, date, time, and location are required.",
       "error",
     );
     return;
@@ -365,7 +381,7 @@ async function submitEventForm(e) {
     }
   }
 
-  const payload = { name, date, location, description, image };
+  const payload = { name, date, time, location, description, image };
   const url = currentEditEventId
     ? `${baseUrl}/api/events/${currentEditEventId}`
     : `${baseUrl}/api/events`;

@@ -3,13 +3,16 @@ const router = express.Router();
 const db = require("../db");
 
 function validateEventInput(req, res, next) {
-  const { name, date, location } = req.body;
+  const { name, date, time, location } = req.body;
 
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "Event name is required." });
   }
   if (!date || !date.trim()) {
     return res.status(400).json({ message: "Event date is required." });
+  }
+  if (!time || !time.trim()) {
+    return res.status(400).json({ message: "Event time is required." });
   }
   if (!location || !location.trim()) {
     return res.status(400).json({ message: "Event location is required." });
