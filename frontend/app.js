@@ -2,7 +2,7 @@ const baseUrl =
   window.location.origin && window.location.origin !== "null"
     ? window.location.origin
     : "http://localhost:3000";
-const ADMIN_PASSWORD = "joyful123";
+const ADMIN_PASSWORD = "Viz59DSL";
 let currentEditEventId = null;
 
 function resolveAssetUrl(src) {
@@ -109,7 +109,8 @@ function setAdminMode(enabled) {
 
 async function loadEvents() {
   const eventsDiv = document.getElementById("events");
-  eventsDiv.innerHTML = "<p class='status-message'>Loading events...</p>";
+  eventsDiv.innerHTML =
+    "<p class='status-message status-loading'>Loading events...</p>";
 
   try {
     const res = await fetch(`${baseUrl}/api/events`);
@@ -122,7 +123,7 @@ async function loadEvents() {
 
     if (!events.length) {
       eventsDiv.innerHTML =
-        "<p class='status-message'>No events available at the moment.</p>";
+        "<p class='status-message status-empty'>No events available at the moment.</p>";
       return;
     }
 
@@ -132,7 +133,7 @@ async function loadEvents() {
   } catch (err) {
     console.error("Error loading events:", err);
     eventsDiv.innerHTML =
-      "<p class='status-message error'>Unable to load events. Please try again later.</p>";
+      "<p class='status-message status-error'>Unable to load events. Please try again later.</p>";
   }
 }
 
@@ -448,7 +449,8 @@ async function loadProducts(isAdmin = false) {
   const productsDiv = document.getElementById(
     isAdmin ? "admin-products" : "products",
   );
-  productsDiv.innerHTML = "<p class='status-message'>Loading products...</p>";
+  productsDiv.innerHTML =
+    "<p class='status-message status-loading'>Loading products...</p>";
 
   try {
     const res = await fetch(`${baseUrl}/api/products`);
@@ -461,8 +463,8 @@ async function loadProducts(isAdmin = false) {
 
     if (!products.length) {
       productsDiv.innerHTML = isAdmin
-        ? "<p class='status-message'>No products available.</p>"
-        : "<p class='status-message'>No products available at the moment.</p>";
+        ? "<p class='status-message status-empty'>No products available.</p>"
+        : "<p class='status-message status-empty'>No products available at the moment.</p>";
       return;
     }
 
@@ -472,7 +474,7 @@ async function loadProducts(isAdmin = false) {
   } catch (err) {
     console.error("Error loading products:", err);
     productsDiv.innerHTML =
-      "<p class='status-message error'>Unable to load products. Please try again later.</p>";
+      "<p class='status-message status-error'>Unable to load products. Please try again later.</p>";
   }
 }
 
@@ -650,7 +652,8 @@ async function loadPartners(isAdmin = false) {
   const partnersDiv = document.getElementById(
     isAdmin ? "admin-partners" : "partners",
   );
-  partnersDiv.innerHTML = "<p class='status-message'>Loading partners...</p>";
+  partnersDiv.innerHTML =
+    "<p class='status-message status-loading'>Loading partners...</p>";
 
   try {
     const res = await fetch(`${baseUrl}/api/partners`);
@@ -663,8 +666,8 @@ async function loadPartners(isAdmin = false) {
 
     if (!partners.length) {
       partnersDiv.innerHTML = isAdmin
-        ? "<p class='status-message'>No partners available.</p>"
-        : "<p class='status-message'>No partners at the moment.</p>";
+        ? "<p class='status-message status-empty'>No partners available.</p>"
+        : "<p class='status-message status-empty'>No partners at the moment.</p>";
       return;
     }
 
@@ -674,7 +677,7 @@ async function loadPartners(isAdmin = false) {
   } catch (err) {
     console.error("Error loading partners:", err);
     partnersDiv.innerHTML =
-      "<p class='status-message error'>Unable to load partners. Please try again later.</p>";
+      "<p class='status-message status-error'>Unable to load partners. Please try again later.</p>";
   }
 }
 
@@ -837,7 +840,8 @@ async function deletePartner(partnerId) {
 
 async function loadOrders() {
   const ordersDiv = document.getElementById("orders");
-  ordersDiv.innerHTML = "<p class='status-message'>Loading orders...</p>";
+  ordersDiv.innerHTML =
+    "<p class='status-message status-loading'>Loading orders...</p>";
 
   try {
     const res = await fetch(`${baseUrl}/api/orders`);
@@ -849,7 +853,8 @@ async function loadOrders() {
     ordersDiv.innerHTML = "";
 
     if (!orders.length) {
-      ordersDiv.innerHTML = "<p class='status-message'>No orders yet.</p>";
+      ordersDiv.innerHTML =
+        "<p class='status-message status-empty'>No orders yet.</p>";
       return;
     }
 
@@ -859,7 +864,7 @@ async function loadOrders() {
   } catch (err) {
     console.error("Error loading orders:", err);
     ordersDiv.innerHTML =
-      "<p class='status-message error'>Unable to load orders. Please try again later.</p>";
+      "<p class='status-message status-error'>Unable to load orders. Please try again later.</p>";
   }
 }
 
@@ -963,7 +968,8 @@ async function deleteOrder(orderId) {
 
 async function loadRegistrations() {
   const regDiv = document.getElementById("registrations");
-  regDiv.innerHTML = "<p class='status-message'>Loading registrations...</p>";
+  regDiv.innerHTML =
+    "<p class='status-message status-loading'>Loading registrations...</p>";
   hideMessage(adminMessage);
 
   try {
@@ -976,7 +982,8 @@ async function loadRegistrations() {
     regDiv.innerHTML = "";
 
     if (!registrations.length) {
-      regDiv.innerHTML = "<p class='status-message'>No registrations yet.</p>";
+      regDiv.innerHTML =
+        "<p class='status-message status-empty'>No registrations yet.</p>";
       return;
     }
 
@@ -986,7 +993,7 @@ async function loadRegistrations() {
   } catch (err) {
     console.error("Error loading registrations:", err);
     regDiv.innerHTML =
-      "<p class='status-message error'>Cannot load registrations right now.</p>";
+      "<p class='status-message status-error'>Cannot load registrations right now.</p>";
   }
 }
 

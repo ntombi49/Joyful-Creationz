@@ -36,7 +36,7 @@ http://localhost:3000
 ## Admin access
 
 - Click the **Admin Panel** button
-- Enter the password: `joyful123`
+- Enter the password: `Viz59DSL`
 
 ## WhatsApp setup
 

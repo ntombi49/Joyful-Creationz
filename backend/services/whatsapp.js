@@ -1,18 +1,15 @@
-const { Blob } = require("buffer");
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_WHATSAPP_FROM =
+  process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
 
-const API_VERSION =
-  process.env.WHATSAPP_API_VERSION ||
-  process.env.CLOUD_API_VERSION ||
-  "v20.0";
-
-const PHONE_NUMBER_ID =
-  process.env.WHATSAPP_PHONE_NUMBER_ID || process.env.WA_PHONE_NUMBER_ID;
-
-const ACCESS_TOKEN =
-  process.env.WHATSAPP_ACCESS_TOKEN || process.env.CLOUD_API_ACCESS_TOKEN;
-
-const DEFAULT_COUNTRY_CODE = process.env.WHATSAPP_DEFAULT_COUNTRY_CODE || "27";
-const TEMPLATE_LANGUAGE = process.env.WHATSAPP_TEMPLATE_LANGUAGE || "en_US";
+function ensureConfigured() {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+    throw new Error(
+      "Twilio is not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in backend/.env.",
+    );
+  }
+}
 
 function normalizeWhatsAppNumber(phone) {
   let digits = String(phone || "").trim();
@@ -23,27 +20,23 @@ function normalizeWhatsAppNumber(phone) {
 
   digits = digits.replace(/[^\d+]/g, "");
 
+  if (digits.startsWith("whatsapp:")) {
+    digits = digits.slice("whatsapp:".length);
+  }
+
   if (digits.startsWith("+")) {
     digits = digits.slice(1);
   }
 
   if (digits.startsWith("0")) {
-    digits = `${DEFAULT_COUNTRY_CODE}${digits.slice(1)}`;
+    digits = `27${digits.slice(1)}`;
   }
 
   if (!/^[0-9]+$/.test(digits)) {
     throw new Error("Recipient phone number must contain digits only.");
   }
 
-  return digits;
-}
-
-function ensureConfigured() {
-  if (!PHONE_NUMBER_ID || !ACCESS_TOKEN) {
-    throw new Error(
-      "Meta WhatsApp Cloud API is not configured. Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN in backend/.env.",
-    );
-  }
+  return `whatsapp:+${digits}`;
 }
 
 function formatEventDate(value) {
@@ -119,35 +112,41 @@ function buildTicketMessage({
   ].join("\n");
 }
 
-function buildTicketCaption({
-  eventName,
-  eventDate,
-  eventTime,
-  eventLocation,
-  ticketNumber,
+function buildTwilioBodyParams({
+  to,
+  body,
+  mediaUrl,
 }) {
-  return [
-    eventName,
-    formatEventDate(eventDate),
-    formatEventTime(eventTime),
-    eventLocation ? String(eventLocation).trim() : "TBA",
-    `Ticket ID: ${ticketNumber}`,
-  ].join("\n");
+  const params = new URLSearchParams();
+  params.set("To", normalizeWhatsAppNumber(to));
+  params.set("From", TWILIO_WHATSAPP_FROM);
+  params.set("Body", body);
+
+  if (mediaUrl) {
+    params.set("MediaUrl", mediaUrl);
+  }
+
+  return params;
 }
 
-function apiUrl(path) {
+async function twilioFetch(path, params) {
   ensureConfigured();
-  return `https://graph.facebook.com/${API_VERSION}/${PHONE_NUMBER_ID}${path}`;
-}
 
-async function apiFetch(path, options = {}) {
-  const response = await fetch(apiUrl(path), {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-      ...(options.headers || {}),
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}${path}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          "Basic " +
+          Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString(
+            "base64",
+          ),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
     },
-  });
+  );
 
   const rawText = await response.text();
   let payload = null;
@@ -160,8 +159,8 @@ async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     const description =
-      payload && typeof payload === "object" && payload.error
-        ? payload.error.message || JSON.stringify(payload.error)
+      payload && typeof payload === "object" && payload.message
+        ? payload.message
         : rawText || `HTTP ${response.status}`;
     const error = new Error(description);
     error.status = response.status;
@@ -173,115 +172,18 @@ async function apiFetch(path, options = {}) {
 }
 
 async function sendTextMessage(to, body) {
-  const recipient = normalizeWhatsAppNumber(to);
-  return apiFetch("/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: recipient,
-      type: "text",
-      text: {
-        preview_url: false,
-        body,
-      },
-    }),
-  });
+  const params = buildTwilioBodyParams({ to, body });
+  return twilioFetch("/Messages.json", params);
 }
 
-async function sendTemplateMessage(to, templateName, parameters = []) {
-  const recipient = normalizeWhatsAppNumber(to);
-  const bodyParameters = parameters.map((parameter) => ({
-    type: "text",
-    text: String(parameter),
-  }));
-
-  return apiFetch("/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: recipient,
-      type: "template",
-      template: {
-        name: templateName,
-        language: {
-          policy: "deterministic",
-          code: TEMPLATE_LANGUAGE,
-        },
-        components: [
-          {
-            type: "body",
-            parameters: bodyParameters,
-          },
-        ],
-      },
-    }),
+async function sendImageMessage(to, imageUrl, caption) {
+  const body = caption || "Your ticket is ready.";
+  const params = buildTwilioBodyParams({
+    to,
+    body,
+    mediaUrl: imageUrl,
   });
-}
-
-async function uploadMedia({ buffer, mimeType, filename }) {
-  const formData = new FormData();
-  formData.append("messaging_product", "whatsapp");
-  formData.append("type", mimeType);
-  formData.append("file", new Blob([buffer], { type: mimeType }), filename);
-
-  const response = await fetch(apiUrl("/media"), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-    },
-    body: formData,
-  });
-
-  const rawText = await response.text();
-  let payload = null;
-
-  try {
-    payload = rawText ? JSON.parse(rawText) : null;
-  } catch {
-    payload = rawText;
-  }
-
-  if (!response.ok) {
-    const description =
-      payload && typeof payload === "object" && payload.error
-        ? payload.error.message || JSON.stringify(payload.error)
-        : rawText || `HTTP ${response.status}`;
-    const error = new Error(description);
-    error.status = response.status;
-    error.payload = payload;
-    throw error;
-  }
-
-  if (!payload || !payload.id) {
-    throw new Error("Meta did not return a media ID.");
-  }
-
-  return payload.id;
-}
-
-async function sendImageMessage(to, imageId, caption) {
-  const recipient = normalizeWhatsAppNumber(to);
-  return apiFetch("/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: recipient,
-      type: "image",
-      image: {
-        id: imageId,
-        ...(caption ? { caption } : {}),
-      },
-    }),
-  });
+  return twilioFetch("/Messages.json", params);
 }
 
 async function sendTicketMessage({
@@ -292,83 +194,17 @@ async function sendTicketMessage({
   eventLocation,
   registrantName,
   ticketNumber,
-  qrBuffer,
-  templateName,
 }) {
-  const recipient = normalizeWhatsAppNumber(to);
-  const results = [];
-  const errors = [];
+  const body = buildTicketMessage({
+    registrantName,
+    eventName,
+    eventDate,
+    eventTime,
+    eventLocation,
+    ticketNumber,
+  });
 
-  if (templateName) {
-    try {
-      const response = await sendTemplateMessage(recipient, templateName, [
-        registrantName,
-        eventName,
-        formatEventDate(eventDate),
-        formatEventTime(eventTime),
-        eventLocation || "TBA",
-        ticketNumber,
-      ]);
-      results.push({ channel: "template", response });
-    } catch (error) {
-      errors.push(`template: ${error.message}`);
-    }
-  }
-
-  try {
-    const mediaId = await uploadMedia({
-      buffer: qrBuffer,
-      mimeType: "image/png",
-      filename: `${ticketNumber}.png`,
-    });
-
-    const response = await sendImageMessage(
-      recipient,
-      mediaId,
-      buildTicketCaption({
-        eventName,
-        eventDate,
-        eventTime,
-        eventLocation,
-        ticketNumber,
-      }),
-    );
-    results.push({ channel: "image", response });
-  } catch (error) {
-    errors.push(`image: ${error.message}`);
-  }
-
-  try {
-    const response = await sendTextMessage(
-      recipient,
-      buildTicketMessage({
-        registrantName,
-        eventName,
-        eventDate,
-        eventTime,
-        eventLocation,
-        ticketNumber,
-      }),
-    );
-    results.push({ channel: "text", response });
-  } catch (error) {
-    errors.push(`text: ${error.message}`);
-  }
-
-  if (!results.length) {
-    const error = new Error(
-      `Unable to send ticket through Meta WhatsApp Cloud API. ${errors.join(
-        " | ",
-      )}`,
-    );
-    error.details = errors;
-    throw error;
-  }
-
-  return {
-    deliveredVia: results.map((result) => result.channel),
-    errors,
-  };
+  return sendTextMessage(to, body);
 }
 
 async function sendAdminAlert(to, message) {
@@ -379,8 +215,6 @@ module.exports = {
   normalizeWhatsAppNumber,
   sendAdminAlert,
   sendImageMessage,
-  sendTemplateMessage,
   sendTextMessage,
   sendTicketMessage,
-  uploadMedia,
 };
