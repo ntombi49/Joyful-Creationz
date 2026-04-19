@@ -109,6 +109,9 @@ db.serialize(() => {
     )
   `);
 
+  ensureColumn("partners", "facebook_url", "TEXT");
+  ensureColumn("partners", "tiktok_url", "TEXT");
+
   // Tickets table
   db.run(`
     CREATE TABLE IF NOT EXISTS tickets (

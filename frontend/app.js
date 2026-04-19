@@ -245,6 +245,7 @@ async function submitRegistration(event) {
       "success",
     );
     closeRegistrationModal();
+    mainMessage.scrollIntoView({ behavior: "smooth", block: "center" });
   } catch (err) {
     console.error("Registration failed:", err);
     showMessage(
@@ -692,6 +693,31 @@ function renderPartnerCard(partner, isAdmin = false) {
   description.textContent = partner.description || "No description available.";
   description.className = "partner-description";
 
+  const isMummysClub = /mummy'?s club/i.test(partner.name || "");
+  const facebookUrl =
+    partner.facebook_url ||
+    (isMummysClub
+      ? "https://www.facebook.com/TheMC2021?rdid=OavhjkCze9WZ7xNF&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F178KCdzY32%2F#"
+      : "");
+  const tiktokUrl =
+    partner.tiktok_url ||
+    (isMummysClub
+      ? "https://www.tiktok.com/@the_real_mummys_club/video/7538152511811669254?_t=ZS-95TxdYaA83z"
+      : "");
+
+  const links = document.createElement("div");
+  links.className = "partner-links";
+
+  if (facebookUrl) {
+    links.appendChild(
+      createExternalLink("Facebook", facebookUrl, "partner-link"),
+    );
+  }
+
+  if (tiktokUrl) {
+    links.appendChild(createExternalLink("TikTok", tiktokUrl, "partner-link"));
+  }
+
   const logo = document.createElement("img");
   logo.src =
     resolveAssetUrl(partner.logo) ||
@@ -718,14 +744,27 @@ function renderPartnerCard(partner, isAdmin = false) {
     actions.appendChild(deleteBtn);
   }
 
-  card.append(title, logo, description, actions);
+  card.append(title, logo, description, links, actions);
   return card;
+}
+
+function createExternalLink(label, href, className = "") {
+  const link = document.createElement("a");
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = label;
+  link.className = className;
+  return link;
 }
 
 function fillPartnerForm(partner) {
   document.getElementById("partnerId").value = partner.id;
   document.getElementById("partnerName").value = partner.name;
   document.getElementById("partnerLogo").value = partner.logo || "";
+  document.getElementById("partnerFacebookUrl").value =
+    partner.facebook_url || "";
+  document.getElementById("partnerTiktokUrl").value = partner.tiktok_url || "";
   document.getElementById("partnerLogoFile").value = "";
   document.getElementById("partnerDescription").value =
     partner.description || "";
@@ -742,6 +781,8 @@ function resetPartnerForm() {
   document.getElementById("partnerForm").reset();
   document.getElementById("partnerId").value = "";
   document.getElementById("partnerLogoFile").value = "";
+  document.getElementById("partnerFacebookUrl").value = "";
+  document.getElementById("partnerTiktokUrl").value = "";
   document.getElementById("cancelPartnerEdit").classList.add("hidden");
   hideMessage(adminMessage);
 }
@@ -753,6 +794,8 @@ async function submitPartnerForm(e) {
   const name = document.getElementById("partnerName").value.trim();
   const logoInput = document.getElementById("partnerLogo").value.trim();
   const logoFile = document.getElementById("partnerLogoFile").files[0];
+  const facebookUrl = document.getElementById("partnerFacebookUrl").value.trim();
+  const tiktokUrl = document.getElementById("partnerTiktokUrl").value.trim();
   let logo = logoInput;
   const description = document
     .getElementById("partnerDescription")
@@ -772,7 +815,13 @@ async function submitPartnerForm(e) {
     }
   }
 
-  const payload = { name, logo, description };
+  const payload = {
+    name,
+    logo,
+    description,
+    facebook_url: facebookUrl,
+    tiktok_url: tiktokUrl,
+  };
   const url = partnerId
     ? `${baseUrl}/api/partners/${partnerId}`
     : `${baseUrl}/api/partners`;

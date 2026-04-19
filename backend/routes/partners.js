@@ -20,10 +20,16 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", validatePartnerInput, (req, res) => {
-  const { name, description, logo } = req.body;
+  const { name, description, logo, facebook_url, tiktok_url } = req.body;
   db.run(
-    "INSERT INTO partners (name, description, logo) VALUES (?, ?, ?)",
-    [name.trim(), description || "", logo || ""],
+    "INSERT INTO partners (name, description, logo, facebook_url, tiktok_url) VALUES (?, ?, ?, ?, ?)",
+    [
+      name.trim(),
+      description || "",
+      logo || "",
+      facebook_url || "",
+      tiktok_url || "",
+    ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({
@@ -36,10 +42,17 @@ router.post("/", validatePartnerInput, (req, res) => {
 
 router.put("/:id", validatePartnerInput, (req, res) => {
   const { id } = req.params;
-  const { name, description, logo } = req.body;
+  const { name, description, logo, facebook_url, tiktok_url } = req.body;
   db.run(
-    "UPDATE partners SET name = ?, description = ?, logo = ? WHERE id = ?",
-    [name.trim(), description || "", logo || "", id],
+    "UPDATE partners SET name = ?, description = ?, logo = ?, facebook_url = ?, tiktok_url = ? WHERE id = ?",
+    [
+      name.trim(),
+      description || "",
+      logo || "",
+      facebook_url || "",
+      tiktok_url || "",
+      id,
+    ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0)

@@ -18,21 +18,19 @@
           <div class="brand-lockup">
             <p class="brand-wordmark">Joyful Creationz</p>
             <h1>
-              Welcome to Joyful Creationz - where creativity, community, and
-              adventure come together.
+              Welcome to Joyful Creationz. Creativity, community, and
+              adventure come together here.
             </h1>
             <p class="subtitle">
               Discover events, register with confidence.
             </p>
           </div>
-          <button id="adminToggle" class="primary-btn">Admin Panel</button>
         </div>
 
         <nav class="site-nav" aria-label="Primary navigation">
           <a href="#events-section">Events</a>
           <a href="#products-section">Products</a>
           <a href="#partners-section">Partners</a>
-          <a href="#admin-section" class="nav-secondary">Admin</a>
         </nav>
       </header>
 
@@ -86,6 +84,63 @@
             </div>
           </div>
           <div id="partners" class="card-grid"></div>
+        </section>
+
+        <section id="founder-section" class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Founder Spotlight</h2>
+              <p class="panel-subtitle">
+                The person behind the Joyful Creationz vision.
+              </p>
+            </div>
+          </div>
+          <article class="founder-card">
+            <img
+              class="founder-photo"
+              src="/images/founder-photo.jpeg"
+              alt="Founder of Joyful Creationz"
+            />
+            <div class="founder-copy">
+              <p class="eyebrow">Founder details</p>
+              <h3>Joyful Creationz Founder</h3>
+              <p class="founder-bio">
+                The founder of Joyful Creationz leads the vision behind the
+                brand, community work, and creative experiences.
+              </p>
+              <div class="founder-meta">
+                <p><strong>Business number:</strong> +27753958233</p>
+                <a
+                  href="https://voninga.com/wp-content/uploads/2026/03/Voninga-Magazine-Issue-002.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Magazine feature
+                </a>
+                <a
+                  href="https://www.facebook.com/boitumelo.itu.50?rdid=f0xhSwraUS70PjK5&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CaPxmimjP%2F#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Facebook profile
+                </a>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section id="admin-access-section" class="panel admin-access-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Admin Access</h2>
+              <p class="panel-subtitle">
+                Open the admin tools only when you need them.
+              </p>
+            </div>
+          </div>
+          <button id="adminToggle" class="primary-btn" type="button">
+            Admin Panel
+          </button>
         </section>
 
         <section id="admin-section" class="panel hidden">
@@ -237,6 +292,22 @@
                 type="text"
                 id="partnerLogo"
                 placeholder="Logo URL or logo filename"
+              />
+            </label>
+            <label>
+              Facebook URL
+              <input
+                type="url"
+                id="partnerFacebookUrl"
+                placeholder="https://facebook.com/..."
+              />
+            </label>
+            <label>
+              TikTok URL
+              <input
+                type="url"
+                id="partnerTiktokUrl"
+                placeholder="https://tiktok.com/@..."
               />
             </label>
             <label>
