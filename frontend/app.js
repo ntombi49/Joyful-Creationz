@@ -1028,7 +1028,6 @@ async function loadRegistrations() {
     }
 
     const registrations = await res.json();
-    regDiv.innerHTML = "";
 
     if (!registrations.length) {
       regDiv.innerHTML =
@@ -1036,9 +1035,8 @@ async function loadRegistrations() {
       return;
     }
 
-    registrations.forEach((registration) => {
-      regDiv.appendChild(renderRegistrationCard(registration));
-    });
+    regDiv.innerHTML = "";
+    regDiv.appendChild(renderRegistrationTable(registrations));
   } catch (err) {
     console.error("Error loading registrations:", err);
     regDiv.innerHTML =
@@ -1046,73 +1044,126 @@ async function loadRegistrations() {
   }
 }
 
-function renderRegistrationCard(registration) {
-  const card = document.createElement("article");
-  card.className = "registration-card";
+function renderRegistrationTable(registrations) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "table-wrap registrations-table-wrap";
 
-  const title = document.createElement("p");
-  title.className = "registration-title";
-  title.innerHTML = `<strong>${registration.name}</strong> | ${registration.email}`;
+  const table = document.createElement("table");
+  table.className = "registrations-table";
 
-  const details = document.createElement("p");
-  details.textContent = `${registration.phone} - ${registration.event_name} on ${formatDate(registration.event_date)}`;
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th>Name</th>
+      <th>Contact</th>
+      <th>Event</th>
+      <th>Status</th>
+      <th class="table-actions-col">Actions</th>
+    </tr>
+  `;
 
-  const status = document.createElement("p");
-  status.className = "registration-status";
-  status.innerHTML = `<strong>Status:</strong> ${
-    registration.paid ? "Paid" : "Not Paid"
-  } | ${registration.ticket_sent ? "Ticket Sent" : "No Ticket"}`;
+  const tbody = document.createElement("tbody");
+  registrations.forEach((registration) => {
+    const row = document.createElement("tr");
+    row.className = "registration-row";
 
-  const actions = document.createElement("div");
-  actions.className = "button-row";
+    const statusPill = registration.paid
+      ? `<span class="status-pill status-pill-success">Paid</span>`
+      : `<span class="status-pill status-pill-warn">Not Paid</span>`;
+    const ticketPill = registration.ticket_sent
+      ? `<span class="status-pill status-pill-info">Ticket Sent</span>`
+      : `<span class="status-pill status-pill-muted">No Ticket</span>`;
 
-  // Mark as Paid button
-  if (!registration.paid) {
-    const paidBtn = document.createElement("button");
-    paidBtn.type = "button";
-    paidBtn.className = "primary-btn";
-    paidBtn.textContent = "Mark Paid";
-    paidBtn.addEventListener("click", () =>
-      markRegistrationPaid(registration.id),
-    );
-    actions.appendChild(paidBtn);
-  }
+    const actions = [];
+    if (!registration.paid) {
+      actions.push(`
+        <button type="button" class="primary-btn registration-action-btn" data-action="mark-paid" data-id="${registration.id}">
+          Mark Paid
+        </button>
+      `);
+    }
 
-  // Send Ticket button
-  if (registration.paid && !registration.ticket_sent) {
-    const ticketBtn = document.createElement("button");
-    ticketBtn.type = "button";
-    ticketBtn.className = "primary-btn";
-    ticketBtn.textContent = "Send Ticket";
-    ticketBtn.addEventListener("click", () =>
-      sendTicketToRegistrant(registration.id),
-    );
-    actions.appendChild(ticketBtn);
-  }
+    if (registration.paid && !registration.ticket_sent) {
+      actions.push(`
+        <button type="button" class="primary-btn registration-action-btn" data-action="send-ticket" data-id="${registration.id}">
+          Send Ticket
+        </button>
+      `);
+    }
 
-  // Resend Ticket button
-  if (registration.paid && registration.ticket_sent) {
-    const resendBtn = document.createElement("button");
-    resendBtn.type = "button";
-    resendBtn.className = "secondary-btn";
-    resendBtn.textContent = "Resend Ticket";
-    resendBtn.addEventListener("click", () =>
-      resendTicketToRegistrant(registration.id),
-    );
-    actions.appendChild(resendBtn);
-  }
+    if (registration.paid && registration.ticket_sent) {
+      actions.push(`
+        <button type="button" class="secondary-btn registration-action-btn" data-action="resend-ticket" data-id="${registration.id}">
+          Resend Ticket
+        </button>
+      `);
+    }
 
-  const deleteBtn = document.createElement("button");
-  deleteBtn.type = "button";
-  deleteBtn.className = "danger-btn";
-  deleteBtn.textContent = "Remove";
-  deleteBtn.addEventListener("click", () =>
-    deleteRegistration(registration.id),
-  );
+    actions.push(`
+      <button type="button" class="danger-btn registration-action-btn" data-action="remove-registration" data-id="${registration.id}">
+        Remove
+      </button>
+    `);
 
-  actions.appendChild(deleteBtn);
-  card.append(title, details, status, actions);
-  return card;
+    row.innerHTML = `
+      <td data-label="Name">
+        <div class="registration-main">
+          <strong>${registration.name}</strong>
+          <span>${registration.email}</span>
+        </div>
+      </td>
+      <td data-label="Contact">${registration.phone}</td>
+      <td data-label="Event">
+        <div class="registration-main">
+          <strong>${registration.event_name}</strong>
+          <span>${formatDate(registration.event_date)}</span>
+        </div>
+      </td>
+      <td data-label="Status">
+        <div class="status-group">
+          ${statusPill}
+          ${ticketPill}
+        </div>
+      </td>
+      <td data-label="Actions" class="table-actions">
+        <div class="button-row button-row-tight">
+          ${actions.join("")}
+        </div>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  table.append(thead, tbody);
+  wrapper.appendChild(table);
+  wrapper.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action][data-id]");
+    if (!button) return;
+
+    const registrationId = Number(button.dataset.id);
+    const action = button.dataset.action;
+
+    if (action === "mark-paid") {
+      markRegistrationPaid(registrationId);
+      return;
+    }
+
+    if (action === "send-ticket") {
+      sendTicketToRegistrant(registrationId);
+      return;
+    }
+
+    if (action === "resend-ticket") {
+      resendTicketToRegistrant(registrationId);
+      return;
+    }
+
+    if (action === "remove-registration") {
+      deleteRegistration(registrationId);
+    }
+  });
+  return wrapper;
 }
 
 async function markRegistrationPaid(registrationId) {

@@ -547,6 +547,20 @@ main {
   background: rgba(155, 92, 255, 0.16);
 }
 
+.founder-meta p {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(155, 92, 255, 0.12);
+  border: 1px solid rgba(155, 92, 255, 0.2);
+  color: #6a1fb5;
+  font-weight: 700;
+}
+
+.founder-meta p strong {
+  color: #4c1486;
+}
+
 .founder-card {
   display: grid;
   grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
@@ -729,6 +743,126 @@ main {
   font-size: 0.9rem;
 }
 
+.registrations-table-shell {
+  width: 100%;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 24px;
+  border: 1px solid rgba(155, 92, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 239, 255, 0.92));
+  box-shadow: var(--shadow-soft);
+}
+
+.registrations-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.registrations-table thead th {
+  text-align: left;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b5687;
+  background: rgba(155, 92, 255, 0.08);
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(155, 92, 255, 0.1);
+}
+
+.registrations-table tbody td {
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(155, 92, 255, 0.08);
+  vertical-align: top;
+  color: #2d1a42;
+}
+
+.registrations-table tbody tr:hover {
+  background: rgba(155, 92, 255, 0.04);
+}
+
+.registration-main {
+  display: grid;
+  gap: 4px;
+}
+
+.registration-main strong {
+  font-size: 0.98rem;
+}
+
+.registration-main span,
+.registrations-table tbody td {
+  font-size: 0.92rem;
+}
+
+.status-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.status-pill-success {
+  color: #166534;
+  background: rgba(74, 222, 128, 0.16);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+.status-pill-warn {
+  color: #9f1239;
+  background: rgba(251, 113, 133, 0.14);
+  border-color: rgba(251, 113, 133, 0.18);
+}
+
+.status-pill-info {
+  color: #4338ca;
+  background: rgba(129, 140, 248, 0.16);
+  border-color: rgba(129, 140, 248, 0.2);
+}
+
+.status-pill-muted {
+  color: #5b4a71;
+  background: rgba(155, 92, 255, 0.08);
+  border-color: rgba(155, 92, 255, 0.12);
+}
+
+.table-actions {
+  white-space: nowrap;
+}
+
+.button-row-tight {
+  margin-top: 0;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.registration-action-btn {
+  width: 128px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.table-actions-col {
+  width: 1%;
+}
+
 .registration-card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(249, 243, 255, 0.96));
   color: #221036;
@@ -743,6 +877,57 @@ main {
 
 .registration-card strong {
   color: #13091f;
+}
+
+@media (max-width: 900px) {
+  .registrations-table {
+    min-width: 0;
+  }
+
+  .registrations-table thead {
+    display: none;
+  }
+
+  .registrations-table,
+  .registrations-table tbody,
+  .registrations-table tr,
+  .registrations-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .registrations-table tbody tr {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(155, 92, 255, 0.08);
+  }
+
+  .registrations-table tbody td {
+    padding: 8px 0;
+    border-bottom: 0;
+  }
+
+  .registrations-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6b5687;
+    font-weight: 800;
+  }
+
+  .table-actions {
+    white-space: normal;
+  }
+
+  .button-row-tight {
+    flex-direction: row;
+  }
+
+  .registration-action-btn {
+    width: auto;
+  }
 }
 
 .hidden {
