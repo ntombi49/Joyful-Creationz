@@ -1066,11 +1066,10 @@ function renderRegistrationTable(registrations) {
   thead.innerHTML = `
     <tr>
       <th>Name</th>
-      <th>Contact</th>
       <th>Event</th>
       <th>Notes</th>
       <th>Status</th>
-      <th class="table-actions-col">Actions</th>
+      <th class="table-actions-col">More</th>
     </tr>
   `;
 
@@ -1085,13 +1084,11 @@ function renderRegistrationTable(registrations) {
       .replace(/'/g, "&#39;");
 
   registrations.forEach((registration) => {
-    const row = document.createElement("tr");
-    row.className = "registration-row";
-
     const allergyText = String(registration.food_allergies || "").trim();
     const otherInfoText = String(registration.additional_info || "").trim();
     const hasNotes = Boolean(allergyText || otherInfoText);
     const notePreview = hasNotes ? allergyText || otherInfoText : "No extra notes";
+    const registrationId = registration.id;
 
     const statusPill = registration.paid
       ? `<span class="status-pill status-pill-success">Paid</span>`
@@ -1100,59 +1097,19 @@ function renderRegistrationTable(registrations) {
       ? `<span class="status-pill status-pill-info">Ticket Sent</span>`
       : `<span class="status-pill status-pill-muted">No Ticket</span>`;
 
-    const actions = [];
-    if (!registration.paid) {
-      actions.push(`
-        <button type="button" class="primary-btn registration-action-btn" data-action="mark-paid" data-id="${registration.id}">
-          Mark Paid
-        </button>
-      `);
-    }
-
-    if (registration.paid && !registration.ticket_sent) {
-      actions.push(`
-        <button type="button" class="primary-btn registration-action-btn" data-action="send-ticket" data-id="${registration.id}">
-          Send Ticket
-        </button>
-      `);
-    }
-
-    if (registration.paid && registration.ticket_sent) {
-      actions.push(`
-        <button type="button" class="secondary-btn registration-action-btn" data-action="resend-ticket" data-id="${registration.id}">
-          Resend Ticket
-        </button>
-      `);
-    }
-
-    actions.push(`
-      <button type="button" class="danger-btn registration-action-btn" data-action="remove-registration" data-id="${registration.id}">
-        Remove
-      </button>
-    `);
-
-    row.innerHTML = `
+    const summaryRow = document.createElement("tr");
+    summaryRow.className = "registration-summary-row";
+    summaryRow.innerHTML = `
       <td data-label="Name">
         <div class="registration-main">
           <strong>${escapeHtml(registration.name)}</strong>
-          <span>${escapeHtml(registration.email)}</span>
         </div>
       </td>
-      <td data-label="Contact">${escapeHtml(registration.phone)}</td>
       <td data-label="Event">
         <div class="registration-main">
           <strong>${escapeHtml(registration.event_name)}</strong>
           <span>${escapeHtml(formatDate(registration.event_date))}</span>
         </div>
-      </td>
-      <td data-label="Notes" class="notes-cell">
-        <details class="notes-toggle">
-          <summary class="notes-summary">${escapeHtml(notePreview)}</summary>
-          <div class="notes-content">
-            <p><strong>Allergies:</strong> ${escapeHtml(allergyText || "None")}</p>
-            <p><strong>Other:</strong> ${escapeHtml(otherInfoText || "None")}</p>
-          </div>
-        </details>
       </td>
       <td data-label="Status">
         <div class="status-group">
@@ -1160,14 +1117,69 @@ function renderRegistrationTable(registrations) {
           ${ticketPill}
         </div>
       </td>
-      <td data-label="Actions" class="table-actions">
-        <div class="button-row button-row-tight">
-          ${actions.join("")}
+      <td data-label="More" class="table-actions">
+        <button
+          type="button"
+          class="secondary-btn registration-toggle-btn"
+          data-action="toggle-registration-details"
+          data-id="${registrationId}"
+          aria-expanded="false"
+        >
+          See more
+        </button>
+      </td>
+    `;
+
+    const detailsRow = document.createElement("tr");
+    detailsRow.className = "registration-details-row hidden";
+    detailsRow.dataset.detailsFor = String(registrationId);
+    detailsRow.innerHTML = `
+      <td colspan="4">
+        <div class="registration-details-grid">
+          <div class="registration-detail-card">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">${escapeHtml(registration.email)}</span>
+          </div>
+          <div class="registration-detail-card">
+            <span class="detail-label">Contact</span>
+            <span class="detail-value">${escapeHtml(registration.phone)}</span>
+          </div>
+          <div class="registration-detail-card registration-detail-card-notes">
+            <span class="detail-label">Notes</span>
+            <div class="notes-content compact-notes">
+              <p><strong>Allergies:</strong> ${escapeHtml(allergyText || "None")}</p>
+              <p><strong>Other:</strong> ${escapeHtml(otherInfoText || "None")}</p>
+              <p class="notes-preview"><strong>Preview:</strong> ${escapeHtml(notePreview)}</p>
+            </div>
+          </div>
+          <div class="registration-detail-card registration-detail-card-actions">
+            <span class="detail-label">Actions</span>
+            <div class="button-row button-row-tight">
+              ${
+                !registration.paid
+                  ? `<button type="button" class="primary-btn registration-action-btn" data-action="mark-paid" data-id="${registrationId}">Mark Paid</button>`
+                  : ""
+              }
+              ${
+                registration.paid && !registration.ticket_sent
+                  ? `<button type="button" class="primary-btn registration-action-btn" data-action="send-ticket" data-id="${registrationId}">Send Ticket</button>`
+                  : ""
+              }
+              ${
+                registration.paid && registration.ticket_sent
+                  ? `<button type="button" class="secondary-btn registration-action-btn" data-action="resend-ticket" data-id="${registrationId}">Resend Ticket</button>`
+                  : ""
+              }
+              <button type="button" class="danger-btn registration-action-btn" data-action="remove-registration" data-id="${registrationId}">
+                Remove
+              </button>
+            </div>
+          </div>
         </div>
       </td>
     `;
 
-    tbody.appendChild(row);
+    tbody.append(summaryRow, detailsRow);
   });
 
   table.append(thead, tbody);
@@ -1196,6 +1208,19 @@ function renderRegistrationTable(registrations) {
 
     if (action === "remove-registration") {
       deleteRegistration(registrationId);
+      return;
+    }
+
+    if (action === "toggle-registration-details") {
+      const detailsRow = wrapper.querySelector(
+        `tr[data-details-for="${registrationId}"]`,
+      );
+      if (!detailsRow) return;
+
+      const isHidden = detailsRow.classList.contains("hidden");
+      detailsRow.classList.toggle("hidden");
+      button.setAttribute("aria-expanded", String(isHidden));
+      button.textContent = isHidden ? "See less" : "See more";
     }
   });
   return wrapper;

@@ -802,6 +802,70 @@ main {
   color: #4a256f;
 }
 
+.registration-summary-row td {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.registration-details-row td {
+  padding: 0 18px 18px;
+  border-bottom: 1px solid rgba(155, 92, 255, 0.08);
+  background: rgba(248, 242, 255, 0.96);
+}
+
+.registration-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 239, 255, 0.96));
+  border: 1px solid rgba(155, 92, 255, 0.1);
+}
+
+.registration-detail-card {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(155, 92, 255, 0.06);
+  border: 1px solid rgba(155, 92, 255, 0.1);
+}
+
+.detail-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b5b9e;
+  font-weight: 800;
+}
+
+.detail-value {
+  color: #2d1a42;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.registration-detail-card-actions {
+  grid-column: 1 / -1;
+}
+
+.registration-toggle-btn {
+  width: 116px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+}
+
+.compact-notes {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.notes-preview {
+  color: #6a1fb5;
+}
+
 .notes-cell {
   max-width: 260px;
 }
@@ -989,6 +1053,10 @@ main {
     width: auto;
   }
 
+  .registration-toggle-btn {
+    width: auto;
+  }
+
   .notes-cell {
     max-width: none;
   }
@@ -999,6 +1067,14 @@ main {
 
   .notes-summary::before {
     width: fit-content;
+  }
+
+  .registration-details-row td {
+    padding: 0 0 14px;
+  }
+
+  .registration-details-grid {
+    padding: 14px;
   }
 }
 
