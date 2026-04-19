@@ -798,6 +798,66 @@ main {
   font-size: 0.92rem;
 }
 
+.registrations-table tbody td strong {
+  color: #4a256f;
+}
+
+.notes-cell {
+  max-width: 260px;
+}
+
+.notes-toggle {
+  display: grid;
+  gap: 8px;
+}
+
+.notes-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  color: #6a1fb5;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.notes-summary::-webkit-details-marker {
+  display: none;
+}
+
+.notes-summary::before {
+  content: "View notes";
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8d5ccf;
+  background: rgba(155, 92, 255, 0.1);
+  border: 1px solid rgba(155, 92, 255, 0.15);
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.notes-toggle[open] .notes-summary::before {
+  content: "Hide notes";
+}
+
+.notes-content {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(155, 92, 255, 0.06);
+  border: 1px solid rgba(155, 92, 255, 0.12);
+  color: #4a256f;
+}
+
+.notes-content p {
+  margin: 0;
+  line-height: 1.5;
+}
+
 .status-group {
   display: flex;
   flex-wrap: wrap;
@@ -927,6 +987,18 @@ main {
 
   .registration-action-btn {
     width: auto;
+  }
+
+  .notes-cell {
+    max-width: none;
+  }
+
+  .notes-summary {
+    flex-wrap: wrap;
+  }
+
+  .notes-summary::before {
+    width: fit-content;
   }
 }
 

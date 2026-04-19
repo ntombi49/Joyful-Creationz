@@ -211,6 +211,10 @@ async function submitRegistration(event) {
   const name = document.getElementById("registerName").value.trim();
   const email = document.getElementById("registerEmail").value.trim();
   const phone = document.getElementById("registerPhone").value.trim();
+  const foodAllergies = document.getElementById("registerAllergies").value.trim();
+  const additionalInfo = document
+    .getElementById("registerAdditionalInfo")
+    .value.trim();
 
   if (!name || !email || !phone) {
     showMessage(
@@ -230,7 +234,14 @@ async function submitRegistration(event) {
     const res = await fetch(`${baseUrl}/api/registrations`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event_id: Number(eventId), name, email, phone }),
+      body: JSON.stringify({
+        event_id: Number(eventId),
+        name,
+        email,
+        phone,
+        food_allergies: foodAllergies,
+        additional_info: additionalInfo,
+      }),
     });
 
     const data = await res.json();
@@ -1057,15 +1068,30 @@ function renderRegistrationTable(registrations) {
       <th>Name</th>
       <th>Contact</th>
       <th>Event</th>
+      <th>Notes</th>
       <th>Status</th>
       <th class="table-actions-col">Actions</th>
     </tr>
   `;
 
   const tbody = document.createElement("tbody");
+
+  const escapeHtml = (value) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
   registrations.forEach((registration) => {
     const row = document.createElement("tr");
     row.className = "registration-row";
+
+    const allergyText = String(registration.food_allergies || "").trim();
+    const otherInfoText = String(registration.additional_info || "").trim();
+    const hasNotes = Boolean(allergyText || otherInfoText);
+    const notePreview = hasNotes ? allergyText || otherInfoText : "No extra notes";
 
     const statusPill = registration.paid
       ? `<span class="status-pill status-pill-success">Paid</span>`
@@ -1108,16 +1134,25 @@ function renderRegistrationTable(registrations) {
     row.innerHTML = `
       <td data-label="Name">
         <div class="registration-main">
-          <strong>${registration.name}</strong>
-          <span>${registration.email}</span>
+          <strong>${escapeHtml(registration.name)}</strong>
+          <span>${escapeHtml(registration.email)}</span>
         </div>
       </td>
-      <td data-label="Contact">${registration.phone}</td>
+      <td data-label="Contact">${escapeHtml(registration.phone)}</td>
       <td data-label="Event">
         <div class="registration-main">
-          <strong>${registration.event_name}</strong>
-          <span>${formatDate(registration.event_date)}</span>
+          <strong>${escapeHtml(registration.event_name)}</strong>
+          <span>${escapeHtml(formatDate(registration.event_date))}</span>
         </div>
+      </td>
+      <td data-label="Notes" class="notes-cell">
+        <details class="notes-toggle">
+          <summary class="notes-summary">${escapeHtml(notePreview)}</summary>
+          <div class="notes-content">
+            <p><strong>Allergies:</strong> ${escapeHtml(allergyText || "None")}</p>
+            <p><strong>Other:</strong> ${escapeHtml(otherInfoText || "None")}</p>
+          </div>
+        </details>
       </td>
       <td data-label="Status">
         <div class="status-group">

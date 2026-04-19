@@ -56,11 +56,16 @@ db.serialize(() => {
       name TEXT,
       email TEXT,
       phone TEXT,
+      food_allergies TEXT,
+      additional_info TEXT,
       registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
       paid INTEGER DEFAULT 0,
       ticket_sent INTEGER DEFAULT 0
     )
   `);
+
+  ensureColumn("registrations", "food_allergies", "TEXT");
+  ensureColumn("registrations", "additional_info", "TEXT");
 
   // Products table
   db.run(`

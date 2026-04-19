@@ -40,9 +40,11 @@ router.get("/", (req, res) => {
 
 router.post("/", validateRegistrationInput, (req, res) => {
   const { event_id, name, email, phone } = req.body;
+  const food_allergies = String(req.body.food_allergies || "").trim();
+  const additional_info = String(req.body.additional_info || "").trim();
   db.run(
-    "INSERT INTO registrations (event_id, name, email, phone) VALUES (?, ?, ?, ?)",
-    [event_id, name.trim(), email.trim(), phone.trim()],
+    "INSERT INTO registrations (event_id, name, email, phone, food_allergies, additional_info) VALUES (?, ?, ?, ?, ?, ?)",
+    [event_id, name.trim(), email.trim(), phone.trim(), food_allergies, additional_info],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID, message: "Registration successful." });
@@ -83,14 +85,16 @@ router.get("/export", (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
 
-      let csv = "Name,Email,Phone,Event,Date\n";
+      let csv = "Name,Email,Phone,Food Allergies,Additional Info,Event,Date\n";
       rows.forEach((row) => {
         const escapedName = String(row.name || "").replace(/"/g, '""');
         const escapedEmail = String(row.email || "").replace(/"/g, '""');
         const escapedPhone = String(row.phone || "").replace(/"/g, '""');
+        const escapedAllergies = String(row.food_allergies || "").replace(/"/g, '""');
+        const escapedInfo = String(row.additional_info || "").replace(/"/g, '""');
         const escapedEvent = String(row.event_name || "").replace(/"/g, '""');
         const escapedDate = String(row.event_date || "").replace(/"/g, '""');
-        csv += `"${escapedName}","${escapedEmail}","${escapedPhone}","${escapedEvent}","${escapedDate}"\n`;
+        csv += `"${escapedName}","${escapedEmail}","${escapedPhone}","${escapedAllergies}","${escapedInfo}","${escapedEvent}","${escapedDate}"\n`;
       });
 
       res.header("Content-Type", "text/csv");
