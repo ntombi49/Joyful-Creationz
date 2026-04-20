@@ -1,6 +1,6 @@
-﻿# Joyful Creationz
+# Mummy's Club
 
-A simple event management app with registration, admin controls, and CSV export.
+A simple event management app for Mummy's Club with registration, admin controls, and CSV export.
 
 ## What was added
 
@@ -11,6 +11,7 @@ A simple event management app with registration, admin controls, and CSV export.
 - Friendly messages and polished UI
 - Backend validation and error handling
 - Static frontend served from the backend for easier local deployment
+- Mummy's Club branding with Joyful Creationz shown as a partner
 
 ## Run locally
 

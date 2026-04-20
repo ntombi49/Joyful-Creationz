@@ -41,6 +41,10 @@ const orderMessage = document.getElementById("orderMessage");
 const adminSection = document.getElementById("admin-section");
 const registrationModal = document.getElementById("registrationModal");
 const orderModal = document.getElementById("orderModal");
+const imageViewerModal = document.getElementById("imageViewerModal");
+const imageViewerImg = document.getElementById("imageViewerImg");
+const imageViewerTitle = document.getElementById("imageViewerTitle");
+const imageViewerSubtitle = document.getElementById("imageViewerSubtitle");
 
 function showMessage(element, text, type = "success") {
   if (!element) return;
@@ -85,6 +89,24 @@ function formatCurrency(value) {
   const amount = Number(value);
   if (Number.isNaN(amount)) return `R ${value}`;
   return `R ${amount.toFixed(2)}`;
+}
+
+function attachImagePreview(image, title, subtitle) {
+  if (!image) return;
+  const previewTitle = String(title || "image");
+  image.tabIndex = 0;
+  image.setAttribute("role", "button");
+  image.setAttribute("aria-label", `View ${previewTitle.toLowerCase()}`);
+  image.title = "Click to view full screen";
+  image.addEventListener("click", () =>
+    openImageViewer(image.src, previewTitle, subtitle),
+  );
+  image.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openImageViewer(image.src, previewTitle, subtitle);
+    }
+  });
 }
 
 function validateEmail(email) {
@@ -147,6 +169,7 @@ function renderEventCard(event) {
     "https://via.placeholder.com/460x260?text=Event+Image";
   image.alt = event.name;
   image.className = "event-image";
+  attachImagePreview(image, event.name, "Event poster");
 
   const title = document.createElement("h3");
   title.textContent = event.name;
@@ -511,6 +534,7 @@ function renderProductCard(product, isAdmin = false) {
     "https://via.placeholder.com/150x150?text=No+Image";
   image.alt = product.name;
   image.className = "product-image";
+  attachImagePreview(image, product.name, "Product image");
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -704,37 +728,13 @@ function renderPartnerCard(partner, isAdmin = false) {
   description.textContent = partner.description || "No description available.";
   description.className = "partner-description";
 
-  const isMummysClub = /mummy'?s club/i.test(partner.name || "");
-  const facebookUrl =
-    partner.facebook_url ||
-    (isMummysClub
-      ? "https://www.facebook.com/TheMC2021?rdid=OavhjkCze9WZ7xNF&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F178KCdzY32%2F#"
-      : "");
-  const tiktokUrl =
-    partner.tiktok_url ||
-    (isMummysClub
-      ? "https://www.tiktok.com/@the_real_mummys_club/video/7538152511811669254?_t=ZS-95TxdYaA83z"
-      : "");
-
-  const links = document.createElement("div");
-  links.className = "partner-links";
-
-  if (facebookUrl) {
-    links.appendChild(
-      createExternalLink("Facebook", facebookUrl, "partner-link"),
-    );
-  }
-
-  if (tiktokUrl) {
-    links.appendChild(createExternalLink("TikTok", tiktokUrl, "partner-link"));
-  }
-
   const logo = document.createElement("img");
   logo.src =
     resolveAssetUrl(partner.logo) ||
     "https://via.placeholder.com/150x150?text=No+Logo";
   logo.alt = partner.name;
   logo.className = "partner-logo";
+  attachImagePreview(logo, partner.name, "Partner logo");
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -755,18 +755,30 @@ function renderPartnerCard(partner, isAdmin = false) {
     actions.appendChild(deleteBtn);
   }
 
-  card.append(title, logo, description, links, actions);
+  card.append(title, logo, description, actions);
   return card;
 }
 
-function createExternalLink(label, href, className = "") {
-  const link = document.createElement("a");
-  link.href = href;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = label;
-  link.className = className;
-  return link;
+function openImageViewer(src, title, subtitle = "") {
+  if (!imageViewerModal || !imageViewerImg || !imageViewerTitle) return;
+
+  imageViewerImg.src = src;
+  imageViewerImg.alt = title || "Image preview";
+  imageViewerTitle.textContent = title || "Image preview";
+
+  if (imageViewerSubtitle) {
+    imageViewerSubtitle.textContent = subtitle || "";
+    imageViewerSubtitle.classList.toggle("hidden", !subtitle);
+  }
+
+  imageViewerModal.classList.remove("hidden");
+}
+
+function closeImageViewer() {
+  if (!imageViewerModal || !imageViewerImg) return;
+
+  imageViewerModal.classList.add("hidden");
+  imageViewerImg.src = "";
 }
 
 function fillPartnerForm(partner) {
@@ -1402,6 +1414,7 @@ function initialize() {
   const orderForm = document.getElementById("orderForm");
   const closeOrderModalButton = document.getElementById("closeOrderModal");
   const cancelOrder = document.getElementById("cancelOrder");
+  const closeImageViewerButton = document.getElementById("closeImageViewer");
 
   if (adminToggle) {
     adminToggle.addEventListener("click", () => {
@@ -1484,6 +1497,38 @@ function initialize() {
       }
     });
   }
+
+  if (imageViewerModal) {
+    imageViewerModal.addEventListener("click", (event) => {
+      if (event.target === imageViewerModal) {
+        closeImageViewer();
+      }
+    });
+  }
+
+  if (closeImageViewerButton) {
+    closeImageViewerButton.addEventListener("click", closeImageViewer);
+  }
+
+  document
+    .querySelectorAll("img[data-preview-title]")
+    .forEach((image) => {
+      attachImagePreview(
+        image,
+        image.dataset.previewTitle,
+        image.dataset.previewSubtitle || "",
+      );
+    });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      imageViewerModal &&
+      !imageViewerModal.classList.contains("hidden")
+    ) {
+      closeImageViewer();
+    }
+  });
 
   loadEvents();
   loadProducts(false);
