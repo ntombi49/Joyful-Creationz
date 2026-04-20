@@ -12,6 +12,7 @@
     />
   </head>
   <body>
+    <a class="skip-link" href="#mainContent">Skip to content</a>
     <div class="page-shell">
       <header class="site-header">
         <div class="site-brand">
@@ -54,9 +55,9 @@
         </div>
       </section>
 
-      <div id="mainMessage" class="message hidden"></div>
+      <div id="mainMessage" class="message hidden" role="status" aria-live="polite"></div>
 
-      <main>
+      <main id="mainContent" tabindex="-1">
         <section id="events-section" class="panel">
           <div class="panel-heading">
             <div>
@@ -133,10 +134,10 @@
               <p class="eyebrow">Founder details</p>
               <h3>Mummy's Club Founder</h3>
               <p class="founder-bio">
-                A movement aimed at emotionally supporting mummies as they
-                navigate the challenges of motherhood and parenting. We walk
-                the journey with you, no matter what situation you may be
-                facing.
+                "A child is a blessing
+                from God. He is the
+                giver of life, and He
+                will take care of His children"
               </p>
               <div class="founder-meta">
                 <a
@@ -146,23 +147,16 @@
                 >
                   Magazine feature
                 </a>
+                <a
+                  href="https://www.facebook.com/boitumelo.itu.50?rdid=7Q0IppN4Dg2GtHOD&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1CaPxmimjP%2F#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Facebook profile
+                </a>
               </div>
             </div>
           </article>
-        </section>
-
-        <section id="admin-access-section" class="panel admin-access-panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Admin Access</h2>
-              <p class="panel-subtitle">
-                Open the admin tools only when you need them.
-              </p>
-            </div>
-          </div>
-          <button id="adminToggle" class="primary-btn" type="button">
-            Admin Panel
-          </button>
         </section>
 
         <section id="admin-section" class="panel hidden">
@@ -175,6 +169,9 @@
               </p>
             </div>
             <div class="admin-actions">
+              <button id="adminLogout" class="secondary-btn hidden" type="button">
+                Sign Out
+              </button>
               <button
                 id="refreshRegistrations"
                 class="secondary-btn"
@@ -188,7 +185,7 @@
             </div>
           </div>
 
-          <div id="adminMessage" class="message hidden"></div>
+          <div id="adminMessage" class="message hidden" role="status" aria-live="polite"></div>
 
           <form id="eventForm" class="form-grid">
             <input type="hidden" id="eventId" />
@@ -375,6 +372,43 @@
             <div id="registrations" class="registrations-table-shell"></div>
           </section>
         </section>
+
+        <section id="admin-access-section" class="panel admin-access-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Admin Access</h2>
+              <p class="panel-subtitle">
+                Sign in to unlock the admin tools when you need them.
+              </p>
+            </div>
+          </div>
+          <div id="adminAccessMessage" class="message hidden" role="status" aria-live="polite"></div>
+          <button id="adminToggle" class="primary-btn" type="button">
+            Admin Login
+          </button>
+          <form id="adminLoginForm" class="form-grid admin-login-panel hidden">
+            <label>
+              Admin Password
+              <input
+                type="password"
+                id="adminPassword"
+                placeholder="Enter admin password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+            <div class="form-actions full-width">
+              <button type="submit" class="primary-btn">Unlock Dashboard</button>
+              <button
+                type="button"
+                id="cancelAdminLogin"
+                class="secondary-btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </section>
       </main>
 
       <footer class="site-footer panel compact-panel">
@@ -422,13 +456,13 @@
       </footer>
     </div>
 
-    <div id="registrationModal" class="modal hidden">
+    <div id="registrationModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="registrationModalTitle">
       <div class="modal-card">
         <button id="closeRegistrationModal" class="modal-close" type="button">
           &times;
         </button>
-        <h2>Register for <span id="modalEventTitle"></span></h2>
-        <div id="modalMessage" class="message hidden"></div>
+        <h2 id="registrationModalTitle">Register for <span id="modalEventTitle"></span></h2>
+        <div id="modalMessage" class="message hidden" role="status" aria-live="polite"></div>
         <form id="registerForm" class="form-grid">
           <input type="hidden" id="modalEventId" />
           <label>
@@ -486,13 +520,13 @@
       </div>
     </div>
 
-    <div id="orderModal" class="modal hidden">
+    <div id="orderModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
       <div class="modal-card">
         <button id="closeOrderModal" class="modal-close" type="button">
           &times;
         </button>
-        <h2>Order <span id="modalProductTitle"></span></h2>
-        <div id="orderMessage" class="message hidden"></div>
+        <h2 id="orderModalTitle">Order <span id="modalProductTitle"></span></h2>
+        <div id="orderMessage" class="message hidden" role="status" aria-live="polite"></div>
         <form id="orderForm" class="form-grid">
           <input type="hidden" id="modalProductId" />
           <label>
@@ -543,7 +577,7 @@
       </div>
     </div>
 
-    <div id="imageViewerModal" class="modal hidden image-viewer-modal">
+    <div id="imageViewerModal" class="modal hidden image-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="imageViewerTitle">
       <div class="modal-card image-viewer-card">
         <button id="closeImageViewer" class="modal-close" type="button">
           &times;
@@ -557,6 +591,8 @@
       </div>
     </div>
 
+    <script src="js/shared.js"></script>
+    <script src="js/image-viewer.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

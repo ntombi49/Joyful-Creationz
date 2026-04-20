@@ -2,12 +2,14 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const { sendAdminAlert } = require("../services/whatsapp");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function validateOrderInput(req, res, next) {
   const { product_id, quantity, customer_name, customer_email, customer_phone } =
     req.body;
+  const numericProductId = Number(product_id);
 
-  if (!product_id) {
+  if (!Number.isInteger(numericProductId) || numericProductId < 1) {
     return res.status(400).json({ message: "Product ID is required." });
   }
 
@@ -32,11 +34,12 @@ function validateOrderInput(req, res, next) {
     return res.status(400).json({ message: "Customer phone is required." });
   }
 
+  req.body.product_id = numericProductId;
   req.body.quantity = numericQuantity;
   next();
 }
 
-router.get("/", (req, res) => {
+router.get("/", requireAdmin, (req, res) => {
   db.all(
     `
     SELECT o.*, p.name as product_name, p.price
@@ -103,7 +106,7 @@ router.post("/", validateOrderInput, async (req, res) => {
   );
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   const normalizedStatus = status === "completed" ? "completed" : "pending";
@@ -120,7 +123,7 @@ router.put("/:id", (req, res) => {
   );
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM orders WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });

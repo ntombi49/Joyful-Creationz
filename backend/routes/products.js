@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function validateProductInput(req, res, next) {
   const { name, price } = req.body;
@@ -25,7 +26,7 @@ router.get("/", (req, res) => {
   });
 });
 
-router.post("/", validateProductInput, (req, res) => {
+router.post("/", requireAdmin, validateProductInput, (req, res) => {
   const { name, description, price, image } = req.body;
   db.run(
     "INSERT INTO products (name, description, price, image) VALUES (?, ?, ?, ?)",
@@ -40,7 +41,7 @@ router.post("/", validateProductInput, (req, res) => {
   );
 });
 
-router.put("/:id", validateProductInput, (req, res) => {
+router.put("/:id", requireAdmin, validateProductInput, (req, res) => {
   const { id } = req.params;
   const { name, description, price, image } = req.body;
   db.run(
@@ -55,7 +56,7 @@ router.put("/:id", validateProductInput, (req, res) => {
   );
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM products WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });

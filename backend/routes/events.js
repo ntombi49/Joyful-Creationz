@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function validateEventInput(req, res, next) {
   const { name, date, time, location } = req.body;
@@ -28,7 +29,7 @@ router.get("/", (req, res) => {
   });
 });
 
-router.post("/", validateEventInput, (req, res) => {
+router.post("/", requireAdmin, validateEventInput, (req, res) => {
   const { name, description, date, time, location, image } = req.body;
   db.run(
     "INSERT INTO events (name, description, date, time, location, image) VALUES (?, ?, ?, ?, ?, ?)",
@@ -50,7 +51,7 @@ router.post("/", validateEventInput, (req, res) => {
   );
 });
 
-router.put("/:id", validateEventInput, (req, res) => {
+router.put("/:id", requireAdmin, validateEventInput, (req, res) => {
   const { id } = req.params;
   const { name, description, date, time, location, image } = req.body;
   db.run(
@@ -73,7 +74,7 @@ router.put("/:id", validateEventInput, (req, res) => {
   );
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM events WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });

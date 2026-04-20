@@ -5,7 +5,7 @@ A simple event management app for Mummy's Club with registration, admin controls
 ## What was added
 
 - Frontend registration form with validation
-- Admin login to add, edit, and delete events
+- Backend-backed admin login to add, edit, and delete events
 - Registration management with remove option
 - CSV export for registrations
 - Friendly messages and polished UI
@@ -36,8 +36,9 @@ http://localhost:3000
 
 ## Admin access
 
-- Click the **Admin Panel** button
-- Enter the password: `Viz59DSL`
+- Open the **Admin Login** panel
+- Sign in with the `ADMIN_PASSWORD` value from `backend/.env`
+- The session is stored in an httpOnly cookie and protects the admin routes
 
 ## WhatsApp setup
 
@@ -60,6 +61,9 @@ Make sure your computer's firewall allows incoming traffic on port `3000`.
 
 ## API
 
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 - `GET /api/events`
 - `POST /api/events`
 - `PUT /api/events/:id`

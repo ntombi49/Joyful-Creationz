@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function validateRegistrationInput(req, res, next) {
   const { event_id, name, email, phone } = req.body;
+  const numericEventId = Number(event_id);
 
-  if (!event_id) {
+  if (!Number.isInteger(numericEventId) || numericEventId < 1) {
     return res.status(400).json({ message: "Event ID is required." });
   }
   if (!name || !name.trim()) {
@@ -18,16 +20,17 @@ function validateRegistrationInput(req, res, next) {
     return res.status(400).json({ message: "Phone number is required." });
   }
 
-  db.get("SELECT id FROM events WHERE id = ?", [event_id], (err, row) => {
+  db.get("SELECT id FROM events WHERE id = ?", [numericEventId], (err, row) => {
     if (err) return res.status(500).json({ message: "Unable to validate event." });
     if (!row) {
       return res.status(400).json({ message: "Selected event does not exist." });
     }
+    req.body.event_id = numericEventId;
     next();
   });
 }
 
-router.get("/", (req, res) => {
+router.get("/", requireAdmin, (req, res) => {
   db.all(
     "SELECT r.*, e.name as event_name, e.date as event_date FROM registrations r JOIN events e ON r.event_id = e.id ORDER BY r.registered_at DESC",
     [],
@@ -52,7 +55,7 @@ router.post("/", validateRegistrationInput, (req, res) => {
   );
 });
 
-router.put("/:id", (req, res) => {
+router.put("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   const { paid } = req.body;
   const normalizedPaid = Number(paid) ? 1 : 0;
@@ -68,7 +71,7 @@ router.put("/:id", (req, res) => {
   );
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM registrations WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -78,7 +81,7 @@ router.delete("/:id", (req, res) => {
   });
 });
 
-router.get("/export", (req, res) => {
+router.get("/export", requireAdmin, (req, res) => {
   db.all(
     "SELECT r.*, e.name as event_name, e.date as event_date FROM registrations r JOIN events e ON r.event_id = e.id",
     [],

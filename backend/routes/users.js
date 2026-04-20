@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 // fetching all users from the database
-router.get("/", (req, res) => {
+router.get("/", requireAdmin, (req, res) => {
   const sql = "SELECT * FROM users";
   db.all(sql, [], (err, rows) => {
     if (err) {
@@ -14,7 +15,7 @@ router.get("/", (req, res) => {
 });
 
 // Create a new user
-router.post("/", (req, res) => {
+router.post("/", requireAdmin, (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res

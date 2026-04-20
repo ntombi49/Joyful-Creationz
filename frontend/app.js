@@ -2,19 +2,8 @@ const baseUrl =
   window.location.origin && window.location.origin !== "null"
     ? window.location.origin
     : "http://localhost:3000";
-const ADMIN_PASSWORD = "Viz59DSL";
 let currentEditEventId = null;
-
-function resolveAssetUrl(src) {
-  if (!src) return "";
-  const trimmed = src.trim();
-  if (!trimmed) return "";
-  if (/^(https?:)?\/\//i.test(trimmed)) return trimmed;
-  if (trimmed.startsWith("/")) return encodeURI(trimmed);
-  if (trimmed.toLowerCase().startsWith("images/"))
-    return encodeURI(`/${trimmed}`);
-  return encodeURI(`${baseUrl}/images/${trimmed}`);
-}
+let adminAuthenticated = false;
 
 async function uploadImageFile(file) {
   if (!file) return null;
@@ -36,6 +25,10 @@ async function uploadImageFile(file) {
 
 const mainMessage = document.getElementById("mainMessage");
 const adminMessage = document.getElementById("adminMessage");
+const adminAccessMessage = document.getElementById("adminAccessMessage");
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminPasswordInput = document.getElementById("adminPassword");
+const adminLogoutButton = document.getElementById("adminLogout");
 const modalMessage = document.getElementById("modalMessage");
 const orderMessage = document.getElementById("orderMessage");
 const adminSection = document.getElementById("admin-section");
@@ -46,80 +39,34 @@ const imageViewerImg = document.getElementById("imageViewerImg");
 const imageViewerTitle = document.getElementById("imageViewerTitle");
 const imageViewerSubtitle = document.getElementById("imageViewerSubtitle");
 
-function showMessage(element, text, type = "success") {
-  if (!element) return;
-  element.textContent = text;
-  element.classList.remove("hidden", "success", "error");
-  element.classList.add(type, "visible");
+function isAdminPanelVisible() {
+  return Boolean(adminAuthenticated && adminSection && !adminSection.classList.contains("hidden"));
 }
 
-function hideMessage(element) {
-  if (!element) return;
-  element.textContent = "";
-  element.classList.add("hidden");
-  element.classList.remove("visible", "success", "error");
-}
-
-function formatDate(value) {
-  if (!value) return "TBA";
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return value;
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
-}
-
-function formatTime(value) {
-  if (!value) return "TBA";
-  const rawTime = String(value).trim();
-  if (!rawTime) return "TBA";
-
-  const parsedTime = new Date(`1970-01-01T${rawTime}`);
-  if (Number.isNaN(parsedTime.valueOf())) return rawTime;
-
-  return new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(parsedTime);
-}
-
-function formatCurrency(value) {
-  const amount = Number(value);
-  if (Number.isNaN(amount)) return `R ${value}`;
-  return `R ${amount.toFixed(2)}`;
-}
-
-function attachImagePreview(image, title, subtitle) {
-  if (!image) return;
-  const previewTitle = String(title || "image");
-  image.tabIndex = 0;
-  image.setAttribute("role", "button");
-  image.setAttribute("aria-label", `View ${previewTitle.toLowerCase()}`);
-  image.title = "Click to view full screen";
-  image.addEventListener("click", () =>
-    openImageViewer(image.src, previewTitle, subtitle),
-  );
-  image.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      openImageViewer(image.src, previewTitle, subtitle);
+function updateAdminControls() {
+  const adminToggle = document.getElementById("adminToggle");
+  if (adminToggle) {
+    if (!adminAuthenticated) {
+      adminToggle.textContent = "Admin Login";
+    } else {
+      adminToggle.textContent = adminSection.classList.contains("hidden")
+        ? "Open Admin Dashboard"
+        : "Hide Admin Dashboard";
     }
-  });
-}
+  }
 
-function validateEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (adminLogoutButton) {
+    adminLogoutButton.classList.toggle("hidden", !adminAuthenticated);
+  }
 }
 
 function setAdminMode(enabled) {
   if (!adminSection) return;
   adminSection.classList.toggle("hidden", !enabled);
-  const adminToggle = document.getElementById("adminToggle");
-  if (adminToggle) {
-    adminToggle.textContent = enabled ? "Hide Admin Panel" : "Admin Panel";
+  if (!enabled) {
+    hideAdminLoginForm();
   }
+  updateAdminControls();
   loadEvents();
   if (enabled) {
     loadRegistrations();
@@ -192,7 +139,7 @@ function renderEventCard(event) {
   registerBtn.addEventListener("click", () => openRegistrationModal(event));
   actions.appendChild(registerBtn);
 
-  if (!adminSection.classList.contains("hidden")) {
+  if (isAdminPanelVisible()) {
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "secondary-btn";
@@ -391,39 +338,35 @@ async function submitEventForm(e) {
   e.preventDefault();
   hideMessage(adminMessage);
 
-  const name = document.getElementById("name").value.trim();
-  const date = document.getElementById("date").value;
-  const time = document.getElementById("time").value;
-  const location = document.getElementById("location").value.trim();
-  const imageInput = document.getElementById("eventImage").value.trim();
-  const imageFile = document.getElementById("eventImageFile").files[0];
-  let image = imageInput;
-  const description = document.getElementById("description").value.trim();
-
-  if (!name || !date || !time || !location) {
-    showMessage(
-      adminMessage,
-      "Name, date, time, and location are required.",
-      "error",
-    );
-    return;
-  }
-
-  if (imageFile) {
-    try {
-      image = await uploadImageFile(imageFile);
-    } catch (uploadErr) {
-      throw new Error(uploadErr.message || "Unable to upload event image.");
-    }
-  }
-
-  const payload = { name, date, time, location, description, image };
-  const url = currentEditEventId
-    ? `${baseUrl}/api/events/${currentEditEventId}`
-    : `${baseUrl}/api/events`;
-  const method = currentEditEventId ? "PUT" : "POST";
-
   try {
+    const name = document.getElementById("name").value.trim();
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
+    const location = document.getElementById("location").value.trim();
+    const imageInput = document.getElementById("eventImage").value.trim();
+    const imageFile = document.getElementById("eventImageFile").files[0];
+    let image = imageInput;
+    const description = document.getElementById("description").value.trim();
+
+    if (!name || !date || !time || !location) {
+      showMessage(
+        adminMessage,
+        "Name, date, time, and location are required.",
+        "error",
+      );
+      return;
+    }
+
+    if (imageFile) {
+      image = await uploadImageFile(imageFile);
+    }
+
+    const payload = { name, date, time, location, description, image };
+    const url = currentEditEventId
+      ? `${baseUrl}/api/events/${currentEditEventId}`
+      : `${baseUrl}/api/events`;
+    const method = currentEditEventId ? "PUT" : "POST";
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -445,6 +388,46 @@ async function submitEventForm(e) {
   } catch (err) {
     console.error("Error saving event:", err);
     showMessage(adminMessage, err.message || "Failed to save event.", "error");
+  }
+}
+
+function showAdminAccessMessage(text, type = "success") {
+  showMessage(adminAccessMessage, text, type);
+}
+
+function hideAdminAccessMessage() {
+  hideMessage(adminAccessMessage);
+}
+
+function showAdminLoginForm() {
+  if (!adminLoginForm) return;
+  adminLoginForm.classList.remove("hidden");
+  if (adminPasswordInput) {
+    adminPasswordInput.focus();
+  }
+}
+
+function hideAdminLoginForm() {
+  if (!adminLoginForm) return;
+  adminLoginForm.classList.add("hidden");
+  if (adminLoginForm) {
+    adminLoginForm.reset();
+  }
+}
+
+async function checkAdminSession() {
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/me`);
+    const data = await res.json();
+    adminAuthenticated = Boolean(data.authenticated);
+  } catch (err) {
+    adminAuthenticated = false;
+  }
+
+  if (adminAuthenticated) {
+    updateAdminControls();
+  } else {
+    hideAdminPanel();
   }
 }
 
@@ -595,36 +578,32 @@ async function submitProductForm(e) {
   e.preventDefault();
   hideMessage(adminMessage);
 
-  const name = document.getElementById("productName").value.trim();
-  const price = parseFloat(document.getElementById("productPrice").value);
-  const imageInput = document.getElementById("productImage").value.trim();
-  const imageFile = document.getElementById("productImageFile").files[0];
-  let image = imageInput;
-  const description = document
-    .getElementById("productDescription")
-    .value.trim();
-  const productId = document.getElementById("productId").value;
-
-  if (!name || isNaN(price)) {
-    showMessage(adminMessage, "Name and valid price are required.", "error");
-    return;
-  }
-
-  if (imageFile) {
-    try {
-      image = await uploadImageFile(imageFile);
-    } catch (uploadErr) {
-      throw new Error(uploadErr.message || "Unable to upload product image.");
-    }
-  }
-
-  const payload = { name, price, image, description };
-  const url = productId
-    ? `${baseUrl}/api/products/${productId}`
-    : `${baseUrl}/api/products`;
-  const method = productId ? "PUT" : "POST";
-
   try {
+    const name = document.getElementById("productName").value.trim();
+    const price = parseFloat(document.getElementById("productPrice").value);
+    const imageInput = document.getElementById("productImage").value.trim();
+    const imageFile = document.getElementById("productImageFile").files[0];
+    let image = imageInput;
+    const description = document
+      .getElementById("productDescription")
+      .value.trim();
+    const productId = document.getElementById("productId").value;
+
+    if (!name || isNaN(price)) {
+      showMessage(adminMessage, "Name and valid price are required.", "error");
+      return;
+    }
+
+    if (imageFile) {
+      image = await uploadImageFile(imageFile);
+    }
+
+    const payload = { name, price, image, description };
+    const url = productId
+      ? `${baseUrl}/api/products/${productId}`
+      : `${baseUrl}/api/products`;
+    const method = productId ? "PUT" : "POST";
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -759,28 +738,6 @@ function renderPartnerCard(partner, isAdmin = false) {
   return card;
 }
 
-function openImageViewer(src, title, subtitle = "") {
-  if (!imageViewerModal || !imageViewerImg || !imageViewerTitle) return;
-
-  imageViewerImg.src = src;
-  imageViewerImg.alt = title || "Image preview";
-  imageViewerTitle.textContent = title || "Image preview";
-
-  if (imageViewerSubtitle) {
-    imageViewerSubtitle.textContent = subtitle || "";
-    imageViewerSubtitle.classList.toggle("hidden", !subtitle);
-  }
-
-  imageViewerModal.classList.remove("hidden");
-}
-
-function closeImageViewer() {
-  if (!imageViewerModal || !imageViewerImg) return;
-
-  imageViewerModal.classList.add("hidden");
-  imageViewerImg.src = "";
-}
-
 function fillPartnerForm(partner) {
   document.getElementById("partnerId").value = partner.id;
   document.getElementById("partnerName").value = partner.name;
@@ -814,43 +771,43 @@ async function submitPartnerForm(e) {
   e.preventDefault();
   hideMessage(adminMessage);
 
-  const name = document.getElementById("partnerName").value.trim();
-  const logoInput = document.getElementById("partnerLogo").value.trim();
-  const logoFile = document.getElementById("partnerLogoFile").files[0];
-  const facebookUrl = document.getElementById("partnerFacebookUrl").value.trim();
-  const tiktokUrl = document.getElementById("partnerTiktokUrl").value.trim();
-  let logo = logoInput;
-  const description = document
-    .getElementById("partnerDescription")
-    .value.trim();
-  const partnerId = document.getElementById("partnerId").value;
-
-  if (!name) {
-    showMessage(adminMessage, "Partner name is required.", "error");
-    return;
-  }
-
-  if (logoFile) {
-    try {
-      logo = await uploadImageFile(logoFile);
-    } catch (uploadErr) {
-      throw new Error(uploadErr.message || "Unable to upload partner logo.");
-    }
-  }
-
-  const payload = {
-    name,
-    logo,
-    description,
-    facebook_url: facebookUrl,
-    tiktok_url: tiktokUrl,
-  };
-  const url = partnerId
-    ? `${baseUrl}/api/partners/${partnerId}`
-    : `${baseUrl}/api/partners`;
-  const method = partnerId ? "PUT" : "POST";
-
   try {
+    const name = document.getElementById("partnerName").value.trim();
+    const logoInput = document.getElementById("partnerLogo").value.trim();
+    const logoFile = document.getElementById("partnerLogoFile").files[0];
+    const facebookUrl = document
+      .getElementById("partnerFacebookUrl")
+      .value.trim();
+    const tiktokUrl = document
+      .getElementById("partnerTiktokUrl")
+      .value.trim();
+    let logo = logoInput;
+    const description = document
+      .getElementById("partnerDescription")
+      .value.trim();
+    const partnerId = document.getElementById("partnerId").value;
+
+    if (!name) {
+      showMessage(adminMessage, "Partner name is required.", "error");
+      return;
+    }
+
+    if (logoFile) {
+      logo = await uploadImageFile(logoFile);
+    }
+
+    const payload = {
+      name,
+      logo,
+      description,
+      facebook_url: facebookUrl,
+      tiktok_url: tiktokUrl,
+    };
+    const url = partnerId
+      ? `${baseUrl}/api/partners/${partnerId}`
+      : `${baseUrl}/api/partners`;
+    const method = partnerId ? "PUT" : "POST";
+
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
@@ -946,7 +903,7 @@ function renderOrderCard(order) {
 
   const title = document.createElement("p");
   title.className = "order-title";
-  title.innerHTML = `<strong>${order.customer_name}</strong> | ${order.customer_email}`;
+  title.innerHTML = `<strong>${escapeHtml(order.customer_name)}</strong> | ${escapeHtml(order.customer_email)}`;
 
   const details = document.createElement("p");
   details.textContent = `${order.product_name} x${order.quantity} - ${formatCurrency(order.total)} (${order.status})`;
@@ -1086,14 +1043,6 @@ function renderRegistrationTable(registrations) {
   `;
 
   const tbody = document.createElement("tbody");
-
-  const escapeHtml = (value) =>
-    String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
 
   registrations.forEach((registration) => {
     const allergyText = String(registration.food_allergies || "").trim();
@@ -1379,25 +1328,88 @@ async function exportRegistrations() {
   }
 }
 
-function askAdminPassword() {
-  const password = prompt("Enter admin password:");
-  if (password === null) return;
-  if (password === ADMIN_PASSWORD) {
-    setAdminMode(true);
-    hideMessage(mainMessage);
-  } else {
-    showMessage(mainMessage, "Incorrect password. Access denied.", "error");
-  }
-}
-
 function hideAdminPanel() {
   setAdminMode(false);
   resetEventForm();
+  resetProductForm();
+  resetPartnerForm();
   hideMessage(adminMessage);
+}
+
+function openAdminLogin() {
+  if (!adminAuthenticated) {
+    showAdminLoginForm();
+    hideAdminAccessMessage();
+    return;
+  }
+
+  if (adminSection.classList.contains("hidden")) {
+    setAdminMode(true);
+  } else {
+    hideAdminPanel();
+  }
+}
+
+async function submitAdminLogin(event) {
+  event.preventDefault();
+  hideAdminAccessMessage();
+
+  const password = adminPasswordInput ? adminPasswordInput.value : "";
+  if (!password.trim()) {
+    showAdminAccessMessage("Please enter the admin password.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Unable to sign in.");
+    }
+
+    adminAuthenticated = true;
+    hideAdminLoginForm();
+    setAdminMode(true);
+    showAdminAccessMessage(data.message || "Admin dashboard unlocked.", "success");
+    hideMessage(mainMessage);
+  } catch (err) {
+    adminAuthenticated = false;
+    updateAdminControls();
+    showAdminAccessMessage(err.message || "Admin sign in failed.", "error");
+    if (adminPasswordInput) {
+      adminPasswordInput.focus();
+      adminPasswordInput.select();
+    }
+  }
+}
+
+async function logoutAdmin() {
+  try {
+    await fetch(`${baseUrl}/api/auth/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("Logout request failed:", err);
+  } finally {
+    adminAuthenticated = false;
+    hideAdminAccessMessage();
+    hideAdminLoginForm();
+    hideAdminPanel();
+    updateAdminControls();
+    showAdminAccessMessage("You have been signed out.", "success");
+  }
 }
 
 function initialize() {
   const adminToggle = document.getElementById("adminToggle");
+  const adminLoginFormElement = document.getElementById("adminLoginForm");
+  const cancelAdminLogin = document.getElementById("cancelAdminLogin");
   const registerForm = document.getElementById("registerForm");
   const closeModalButton = document.getElementById("closeRegistrationModal");
   const cancelRegistration = document.getElementById("cancelRegistration");
@@ -1416,14 +1428,30 @@ function initialize() {
   const cancelOrder = document.getElementById("cancelOrder");
   const closeImageViewerButton = document.getElementById("closeImageViewer");
 
+  updateAdminControls();
+
   if (adminToggle) {
     adminToggle.addEventListener("click", () => {
-      if (adminSection.classList.contains("hidden")) {
-        askAdminPassword();
+      if (!adminAuthenticated) {
+        showAdminLoginForm();
+      } else if (adminSection.classList.contains("hidden")) {
+        setAdminMode(true);
       } else {
         hideAdminPanel();
       }
     });
+  }
+
+  if (adminLoginFormElement) {
+    adminLoginFormElement.addEventListener("submit", submitAdminLogin);
+  }
+
+  if (cancelAdminLogin) {
+    cancelAdminLogin.addEventListener("click", hideAdminLoginForm);
+  }
+
+  if (adminLogoutButton) {
+    adminLogoutButton.addEventListener("click", logoutAdmin);
   }
 
   if (registerForm) {
@@ -1533,6 +1561,7 @@ function initialize() {
   loadEvents();
   loadProducts(false);
   loadPartners(false);
+  checkAdminSession();
 }
 
 document.addEventListener("DOMContentLoaded", initialize);

@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../db");
 const QRCode = require("qrcode");
 const { sendTicketMessage } = require("../services/whatsapp");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function generateTicketNumber() {
   return `JC-TICKET-${Date.now()}-${Math.random()
@@ -62,7 +63,7 @@ async function sendTicketViaWhatsApp({
   });
 }
 
-router.get("/", (req, res) => {
+router.get("/", requireAdmin, (req, res) => {
   db.all(
     `SELECT t.*, r.name, r.email, r.phone, e.name as event_name
      FROM tickets t
@@ -77,7 +78,7 @@ router.get("/", (req, res) => {
   );
 });
 
-router.post("/send/:registrationId", async (req, res) => {
+router.post("/send/:registrationId", requireAdmin, async (req, res) => {
   const { registrationId } = req.params;
 
   try {
@@ -240,7 +241,7 @@ router.post("/send/:registrationId", async (req, res) => {
   }
 });
 
-router.post("/resend/:ticketId", async (req, res) => {
+router.post("/resend/:ticketId", requireAdmin, async (req, res) => {
   const { ticketId } = req.params;
 
   db.get(

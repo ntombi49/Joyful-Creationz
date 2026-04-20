@@ -1,16 +1,24 @@
-require("dotenv").config();
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const multer = require("multer");
+const fs = require("fs");
+const { requireAdmin } = require("./middleware/adminAuth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const imagesDir = path.join(__dirname, "public", "images");
+
+fs.mkdirSync(imagesDir, { recursive: true });
 
 const upload = multer({
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+  },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, "public", "images"));
+      cb(null, imagesDir);
     },
     filename: (req, file, cb) => {
       const safeName = file.originalname
@@ -29,10 +37,11 @@ const upload = multer({
 });
 
 app.use(cors());
-app.use(express.json());
-app.use("/images", express.static(path.join(__dirname, "public", "images")));
+app.disable("x-powered-by");
+app.use(express.json({ limit: "1mb" }));
+app.use("/images", express.static(imagesDir));
 
-app.post("/api/uploads", upload.single("file"), (req, res) => {
+app.post("/api/uploads", requireAdmin, upload.single("file"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded." });
   }
@@ -42,6 +51,7 @@ app.post("/api/uploads", upload.single("file"), (req, res) => {
   });
 });
 
+app.use("/api/auth", require("./routes/auth"));
 app.use("/api/events", require("./routes/events"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
@@ -53,6 +63,19 @@ app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
+});
+
+app.use((err, req, res, next) => {
+  if (err && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ error: "Image files must be smaller than 8MB." });
+  }
+
+  if (err && err.message) {
+    return res.status(400).json({ error: err.message });
+  }
+
+  console.error("Unhandled server error:", err);
+  return res.status(500).json({ error: "Internal server error." });
 });
 
 app.listen(PORT, "0.0.0.0", () => {

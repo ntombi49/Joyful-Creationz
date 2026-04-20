@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { requireAdmin } = require("../middleware/adminAuth");
 
 function validatePartnerInput(req, res, next) {
   const { name } = req.body;
@@ -19,7 +20,7 @@ router.get("/", (req, res) => {
   });
 });
 
-router.post("/", validatePartnerInput, (req, res) => {
+router.post("/", requireAdmin, validatePartnerInput, (req, res) => {
   const { name, description, logo, facebook_url, tiktok_url } = req.body;
   db.run(
     "INSERT INTO partners (name, description, logo, facebook_url, tiktok_url) VALUES (?, ?, ?, ?, ?)",
@@ -40,7 +41,7 @@ router.post("/", validatePartnerInput, (req, res) => {
   );
 });
 
-router.put("/:id", validatePartnerInput, (req, res) => {
+router.put("/:id", requireAdmin, validatePartnerInput, (req, res) => {
   const { id } = req.params;
   const { name, description, logo, facebook_url, tiktok_url } = req.body;
   db.run(
@@ -62,7 +63,7 @@ router.put("/:id", validatePartnerInput, (req, res) => {
   );
 });
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id", requireAdmin, (req, res) => {
   const { id } = req.params;
   db.run("DELETE FROM partners WHERE id = ?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
