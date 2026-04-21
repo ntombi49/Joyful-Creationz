@@ -1470,7 +1470,30 @@ main {
     align-items: flex-start;
   }
 
+  .gallery-media-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .gallery-image {
+    aspect-ratio: 4 / 5;
+    padding: 4px;
+  }
+
   .founder-card {
     padding: 20px;
+  }
+
+  .image-viewer-card {
+    width: min(100%, 100%);
+    padding: 22px 18px 18px;
+  }
+
+  .image-viewer-stage {
+    padding: 12px;
+  }
+
+  .image-viewer-stage img {
+    max-height: 62vh;
   }
 }
