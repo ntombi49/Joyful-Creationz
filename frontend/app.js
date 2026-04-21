@@ -947,18 +947,45 @@ function renderGalleryCard(item, options = {}) {
   description.textContent = item.description || "No description available.";
   description.className = "gallery-description";
 
-  const mediaGrid = document.createElement("div");
-  mediaGrid.className = "gallery-media-grid";
-
   const images = normalizeGalleryImages(item.images);
-  images.forEach((imageSrc, index) => {
-    const image = document.createElement("img");
-    image.src = resolveAssetUrl(imageSrc) || imageSrc;
-    image.alt = `${item.name} photo ${index + 1}`;
-    image.className = "gallery-image";
-    attachImagePreview(image, item.name);
-    mediaGrid.appendChild(image);
-  });
+  const resolvedImages = images
+    .map((imageSrc) => resolveAssetUrl(imageSrc) || imageSrc)
+    .filter(Boolean);
+
+  const media = document.createElement("div");
+  media.className = "gallery-media";
+
+  if (resolvedImages.length) {
+    const featuredButton = createGalleryMediaButton(
+      resolvedImages,
+      0,
+      item.name,
+      "gallery-feature-button",
+      "gallery-feature-image",
+      `${item.name} featured image`,
+    );
+    media.appendChild(featuredButton);
+  }
+
+  if (resolvedImages.length > 1) {
+    const thumbRail = document.createElement("div");
+    thumbRail.className = "gallery-thumb-rail";
+
+    resolvedImages.slice(1).forEach((imageSrc, index) => {
+      thumbRail.appendChild(
+        createGalleryMediaButton(
+          resolvedImages,
+          index + 1,
+          item.name,
+          "gallery-thumb-button",
+          "gallery-thumb-image",
+          `${item.name} thumbnail ${index + 2}`,
+        ),
+      );
+    });
+
+    media.appendChild(thumbRail);
+  }
 
   const actions = document.createElement("div");
   actions.className = "button-row";
@@ -979,8 +1006,35 @@ function renderGalleryCard(item, options = {}) {
     actions.appendChild(deleteBtn);
   }
 
-  card.append(title, description, mediaGrid, actions);
+  card.append(title, description, media, actions);
   return card;
+}
+
+function createGalleryMediaButton(
+  galleryImages,
+  index,
+  title,
+  buttonClass,
+  imageClass,
+  altText,
+) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = buttonClass;
+  button.setAttribute("aria-label", `Open ${title} image ${index + 1}`);
+
+  const image = document.createElement("img");
+  image.src = galleryImages[index];
+  image.alt = altText;
+  image.className = imageClass;
+  image.loading = "lazy";
+  button.appendChild(image);
+
+  button.addEventListener("click", () => {
+    openGalleryViewer(galleryImages, index, title);
+  });
+
+  return button;
 }
 
 function fillGalleryForm(item) {

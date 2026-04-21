@@ -81,8 +81,8 @@
                 have shared together.
               </p>
             </div>
-          </div>g
-          <div id="gallery" class="card-grid"></div>
+          </div>
+          <div id="gallery" class="card-grid gallery-feed"></div>
         </section>
 
         <section id="products-section" class="panel">
@@ -659,9 +659,16 @@
         <button id="closeImageViewer" class="modal-close" type="button">
           &times;
         </button>
+        <button id="previousImage" class="image-viewer-nav image-viewer-nav-prev" type="button" aria-label="Previous image">
+          &#8249;
+        </button>
+        <button id="nextImage" class="image-viewer-nav image-viewer-nav-next" type="button" aria-label="Next image">
+          &#8250;
+        </button>
         <div class="image-viewer-stage">
           <img id="imageViewerImg" alt="Image preview" />
         </div>
+        <div id="imageViewerThumbs" class="image-viewer-thumbs" aria-label="Image thumbnails"></div>
       </div>
     </div>
 
