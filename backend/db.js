@@ -129,6 +129,17 @@ db.serialize(() => {
       scanned INTEGER DEFAULT 0
     )
   `);
+
+  // Gallery entries table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS gallery_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      date TEXT,
+      images TEXT NOT NULL DEFAULT '[]'
+    )
+  `);
 });
 
 module.exports = db;

@@ -550,6 +550,7 @@ main {
 .event-card,
 .product-card,
 .partner-card,
+.gallery-card,
 .order-card,
 .registration-card {
   background:
@@ -567,9 +568,16 @@ main {
   overflow: hidden;
 }
 
+.event-card--archived {
+  border-color: rgba(120, 96, 154, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(240, 232, 247, 0.84));
+}
+
 .event-card:hover,
 .product-card:hover,
 .partner-card:hover,
+.gallery-card:hover,
 .order-card:hover,
 .registration-card:hover {
   transform: translateY(-4px);
@@ -580,6 +588,7 @@ main {
 .event-card::before,
 .product-card::before,
 .partner-card::before,
+.gallery-card::before,
 .order-card::before,
 .registration-card::before {
   content: "";
@@ -588,6 +597,26 @@ main {
   width: 100%;
   height: 4px;
   background: linear-gradient(90deg, rgba(142, 99, 255, 0.92), rgba(255, 119, 187, 0.8), rgba(233, 194, 255, 0.6));
+}
+
+.event-badge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 24px rgba(22, 8, 36, 0.16);
+}
+
+.event-badge--archived {
+  color: #4d3d63;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(120, 96, 154, 0.2);
 }
 
 .event-card img,
@@ -605,9 +634,28 @@ main {
   display: block;
 }
 
+.gallery-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.gallery-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  object-fit: cover;
+  background: linear-gradient(180deg, #ffffff, #f7efff);
+  padding: 6px;
+  display: block;
+  cursor: zoom-in;
+  border: 1px solid rgba(233, 194, 255, 0.16);
+}
+
 .event-image,
 .product-image,
 .partner-logo,
+.gallery-image,
 .previewable-image {
   cursor: zoom-in;
 }
@@ -615,6 +663,7 @@ main {
 .event-card h3,
 .product-card h4,
 .partner-card h4,
+.gallery-card h3,
 .order-title,
 .registration-card h3 {
   margin: 0;
@@ -624,13 +673,15 @@ main {
 .event-card h3,
 .registration-card h3,
 .product-card h4,
-.partner-card h4 {
+.partner-card h4,
+.gallery-card h3 {
   font-size: 1.2rem;
 }
 
 .event-description,
 .product-description,
 .partner-description,
+.gallery-description,
 .event-meta,
 .registration-title,
 .registration-details,
@@ -786,6 +837,13 @@ main {
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.form-hint {
+  margin: -4px 0 0;
+  color: #cdbde0;
+  line-height: 1.6;
+  font-size: 0.92rem;
 }
 
 .full-width {
@@ -1270,12 +1328,6 @@ main {
   padding-bottom: 20px;
 }
 
-.image-viewer-subtitle {
-  margin: 10px 0 18px;
-  color: #6b5687;
-  line-height: 1.5;
-}
-
 .image-viewer-stage {
   display: grid;
   place-items: center;
@@ -1300,6 +1352,18 @@ main {
 
 .compact-panel {
   padding-top: 8px;
+}
+
+.archived-panel {
+  margin-top: 28px;
+}
+
+.gallery-card {
+  gap: 12px;
+}
+
+.gallery-card .button-row {
+  margin-top: 4px;
 }
 
 .compact-panel h3 {

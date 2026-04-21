@@ -34,6 +34,7 @@
 
         <nav class="site-nav" aria-label="Primary navigation">
           <a href="#events-section">Events</a>
+          <a href="#gallery-section">Gallery</a>
           <a href="#products-section">Products</a>
           <a href="#partners-section">Partners</a>
         </nav>
@@ -69,6 +70,19 @@
             </div>
           </div>
           <div id="events" class="card-grid"></div>
+        </section>
+
+        <section id="gallery-section" class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Gallery</h2>
+              <p class="panel-subtitle">
+                A look back at the moments, memories, and community events we
+                have shared together.
+              </p>
+            </div>
+          </div>g
+          <div id="gallery" class="card-grid"></div>
         </section>
 
         <section id="products-section" class="panel">
@@ -164,8 +178,8 @@
             <div>
               <h2>Admin Dashboard</h2>
               <p class="panel-subtitle">
-                Add, edit, remove events and products or export registration
-                records.
+                Add, edit, remove events, gallery entries, and products or
+                export registration records.
               </p>
             </div>
             <div class="admin-actions">
@@ -241,6 +255,69 @@
               </button>
             </div>
           </form>
+
+          <form id="galleryForm" class="form-grid">
+            <input type="hidden" id="galleryId" />
+            <input type="hidden" id="galleryImages" />
+            <label>
+              Event Name
+              <input
+                type="text"
+                id="galleryName"
+                placeholder="Event name"
+                required
+              />
+            </label>
+            <label>
+              Event Date
+              <input type="date" id="galleryDate" required />
+            </label>
+            <label class="full-width">
+              Description
+              <textarea
+                id="galleryDescription"
+                rows="3"
+                placeholder="Short description of the event"
+              ></textarea>
+            </label>
+            <label class="full-width">
+              Upload pictures
+              <input
+                type="file"
+                id="galleryImageFiles"
+                accept="image/*"
+                multiple
+              />
+            </label>
+            <p class="form-hint full-width">
+              Add one or more images for the event gallery entry. Existing
+              images stay in place when editing, and any new uploads are added
+              to the entry.
+            </p>
+            <div class="form-actions full-width">
+              <button type="submit" class="primary-btn">Save Gallery Entry</button>
+              <button
+                type="button"
+                id="cancelGalleryEdit"
+                class="secondary-btn hidden"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+
+          <div class="compact-panel archived-panel">
+            <h3>Archived Events</h3>
+            <p class="panel-subtitle">
+              Past events stay here for admin reference and records.
+            </p>
+            <div id="archivedEvents" class="card-grid"></div>
+          </div>
+
+          <section id="admin-gallery-section" class="panel compact-panel">
+            <h3>Gallery Entries</h3>
+            <div id="admin-gallery" class="card-grid"></div>
+          </section>
 
           <form id="productForm" class="form-grid">
             <input type="hidden" id="productId" />
@@ -577,14 +654,11 @@
       </div>
     </div>
 
-    <div id="imageViewerModal" class="modal hidden image-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="imageViewerTitle">
+    <div id="imageViewerModal" class="modal hidden image-viewer-modal" role="dialog" aria-modal="true" aria-label="Image preview">
       <div class="modal-card image-viewer-card">
         <button id="closeImageViewer" class="modal-close" type="button">
           &times;
         </button>
-        <p class="eyebrow">Image preview</p>
-        <h2 id="imageViewerTitle">Preview</h2>
-        <p id="imageViewerSubtitle" class="image-viewer-subtitle"></p>
         <div class="image-viewer-stage">
           <img id="imageViewerImg" alt="Image preview" />
         </div>

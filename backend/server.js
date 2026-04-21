@@ -1,10 +1,12 @@
+const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
+
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
 const { requireAdmin } = require("./middleware/adminAuth");
+const db = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +55,7 @@ app.post("/api/uploads", requireAdmin, upload.single("file"), (req, res) => {
 
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/events", require("./routes/events"));
+app.use("/api/gallery", require("./routes/gallery"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/users", require("./routes/users"));
@@ -67,7 +70,9 @@ app.get("/", (req, res) => {
 
 app.use((err, req, res, next) => {
   if (err && err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ error: "Image files must be smaller than 8MB." });
+    return res
+      .status(400)
+      .json({ error: "Image files must be smaller than 8MB." });
   }
 
   if (err && err.message) {

@@ -4,28 +4,19 @@ function getImageViewerElements() {
   return {
     modal: document.getElementById("imageViewerModal"),
     image: document.getElementById("imageViewerImg"),
-    title: document.getElementById("imageViewerTitle"),
-    subtitle: document.getElementById("imageViewerSubtitle"),
     closeButton: document.getElementById("closeImageViewer"),
   };
 }
 
-function openImageViewer(src, title, subtitle = "") {
-  const { modal, image, title: titleNode, subtitle: subtitleNode, closeButton } =
-    getImageViewerElements();
+function openImageViewer(src, title) {
+  const { modal, image, closeButton } = getImageViewerElements();
 
-  if (!modal || !image || !titleNode) return;
+  if (!modal || !image) return;
 
   activeImageTrigger =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
   image.src = src;
   image.alt = title || "Image preview";
-  titleNode.textContent = title || "Image preview";
-
-  if (subtitleNode) {
-    subtitleNode.textContent = subtitle || "";
-    subtitleNode.classList.toggle("hidden", !subtitle);
-  }
 
   modal.classList.remove("hidden");
   closeButton?.focus();
@@ -51,11 +42,11 @@ function attachImagePreview(image, title, subtitle) {
   image.setAttribute("role", "button");
   image.setAttribute("aria-label", `View ${previewTitle.toLowerCase()}`);
   image.title = "Click to view full screen";
-  image.addEventListener("click", () => openImageViewer(image.src, previewTitle, subtitle));
+  image.addEventListener("click", () => openImageViewer(image.src, previewTitle));
   image.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      openImageViewer(image.src, previewTitle, subtitle);
+      openImageViewer(image.src, previewTitle);
     }
   });
 }

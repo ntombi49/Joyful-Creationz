@@ -3,6 +3,7 @@ const baseUrl =
     ? window.location.origin
     : "http://localhost:3000";
 let currentEditEventId = null;
+let currentEditGalleryId = null;
 let adminAuthenticated = false;
 
 async function uploadImageFile(file) {
@@ -23,6 +24,43 @@ async function uploadImageFile(file) {
   return data.filename || data.url;
 }
 
+async function uploadGalleryImages(files) {
+  const uploadedImages = [];
+  for (const file of files || []) {
+    const uploaded = await uploadImageFile(file);
+    if (uploaded) {
+      uploadedImages.push(uploaded);
+    }
+  }
+  return uploadedImages;
+}
+
+function normalizeGalleryImages(images) {
+  if (!images) return [];
+  if (Array.isArray(images)) {
+    return images.map((image) => String(image || "").trim()).filter(Boolean);
+  }
+
+  if (typeof images === "string") {
+    const trimmed = images.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map((image) => String(image || "").trim()).filter(Boolean);
+      }
+    } catch (err) {
+      return trimmed
+        .split(",")
+        .map((image) => String(image || "").trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
 const mainMessage = document.getElementById("mainMessage");
 const adminMessage = document.getElementById("adminMessage");
 const adminAccessMessage = document.getElementById("adminAccessMessage");
@@ -36,8 +74,6 @@ const registrationModal = document.getElementById("registrationModal");
 const orderModal = document.getElementById("orderModal");
 const imageViewerModal = document.getElementById("imageViewerModal");
 const imageViewerImg = document.getElementById("imageViewerImg");
-const imageViewerTitle = document.getElementById("imageViewerTitle");
-const imageViewerSubtitle = document.getElementById("imageViewerSubtitle");
 
 function isAdminPanelVisible() {
   return Boolean(adminAuthenticated && adminSection && !adminSection.classList.contains("hidden"));
@@ -68,6 +104,7 @@ function setAdminMode(enabled) {
   }
   updateAdminControls();
   loadEvents();
+  loadGallery();
   if (enabled) {
     loadRegistrations();
     loadProducts(true);
@@ -76,10 +113,35 @@ function setAdminMode(enabled) {
   }
 }
 
+function isPastEvent(event) {
+  const status = String(event?.status || "").toLowerCase();
+  if (status === "past") return true;
+  if (status === "upcoming") return false;
+
+  const date = String(event?.date || "").trim();
+  const time = String(event?.time || "").trim() || "00:00";
+  if (!date) return false;
+
+  const parsed = new Date(`${date}T${time}:00`);
+  if (Number.isNaN(parsed.valueOf())) return false;
+  return parsed.getTime() < Date.now();
+}
+
+function getEventSortValue(event) {
+  const date = String(event?.date || "").trim();
+  const time = String(event?.time || "").trim() || "00:00";
+  const parsed = new Date(`${date}T${time}:00`);
+  return Number.isNaN(parsed.valueOf()) ? 0 : parsed.getTime();
+}
+
 async function loadEvents() {
   const eventsDiv = document.getElementById("events");
+  const archivedEventsDiv = document.getElementById("archivedEvents");
   eventsDiv.innerHTML =
     "<p class='status-message status-loading'>Loading events...</p>";
+  if (archivedEventsDiv) {
+    archivedEventsDiv.innerHTML = "";
+  }
 
   try {
     const res = await fetch(`${baseUrl}/api/events`);
@@ -88,27 +150,54 @@ async function loadEvents() {
     }
 
     const events = await res.json();
+    const upcomingEvents = events
+      .filter((event) => !isPastEvent(event))
+      .sort((a, b) => getEventSortValue(a) - getEventSortValue(b));
+    const archivedEvents = events
+      .filter((event) => isPastEvent(event))
+      .sort((a, b) => getEventSortValue(b) - getEventSortValue(a));
     eventsDiv.innerHTML = "";
 
-    if (!events.length) {
+    if (!upcomingEvents.length) {
       eventsDiv.innerHTML =
-        "<p class='status-message status-empty'>No events available at the moment.</p>";
-      return;
+        "<p class='status-message status-empty'>No upcoming events available at the moment.</p>";
+    } else {
+      upcomingEvents.forEach((event) => {
+        eventsDiv.appendChild(renderEventCard(event));
+      });
     }
 
-    events.forEach((event) => {
-      eventsDiv.appendChild(renderEventCard(event));
-    });
+    if (archivedEventsDiv) {
+      if (isAdminPanelVisible()) {
+        archivedEventsDiv.innerHTML = "";
+        if (!archivedEvents.length) {
+          archivedEventsDiv.innerHTML =
+            "<p class='status-message status-empty'>No archived events yet.</p>";
+        } else {
+          archivedEvents.forEach((event) => {
+            archivedEventsDiv.appendChild(
+              renderEventCard(event, { adminView: true, archived: true }),
+            );
+          });
+        }
+      } else {
+        archivedEventsDiv.innerHTML = "";
+      }
+    }
   } catch (err) {
     console.error("Error loading events:", err);
     eventsDiv.innerHTML =
       "<p class='status-message status-error'>Unable to load events. Please try again later.</p>";
+    if (archivedEventsDiv) {
+      archivedEventsDiv.innerHTML = "";
+    }
   }
 }
 
-function renderEventCard(event) {
+function renderEventCard(event, options = {}) {
+  const { adminView = false, archived = false } = options;
   const card = document.createElement("article");
-  card.className = "event-card";
+  card.className = archived ? "event-card event-card--archived" : "event-card";
 
   const image = document.createElement("img");
   image.src =
@@ -117,6 +206,13 @@ function renderEventCard(event) {
   image.alt = event.name;
   image.className = "event-image";
   attachImagePreview(image, event.name, "Event poster");
+
+  if (archived) {
+    const badge = document.createElement("span");
+    badge.className = "event-badge event-badge--archived";
+    badge.textContent = "Archived";
+    card.appendChild(badge);
+  }
 
   const title = document.createElement("h3");
   title.textContent = event.name;
@@ -127,19 +223,21 @@ function renderEventCard(event) {
 
   const meta = document.createElement("p");
   meta.className = "event-meta";
-  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} | <strong>Time:</strong> ${formatTime(event.time)} | <strong>Location:</strong> ${event.location || "TBA"}`;
+  meta.innerHTML = `<strong>Date:</strong> ${formatDate(event.date)} | <strong>Time:</strong> ${formatTime(event.time)} | <strong>Location:</strong> ${event.location || "TBA"}${archived ? " | <strong>Status:</strong> Archived" : ""}`;
 
   const actions = document.createElement("div");
   actions.className = "button-row";
 
-  const registerBtn = document.createElement("button");
-  registerBtn.type = "button";
-  registerBtn.className = "secondary-btn";
-  registerBtn.textContent = "Register";
-  registerBtn.addEventListener("click", () => openRegistrationModal(event));
-  actions.appendChild(registerBtn);
+  if (!archived) {
+    const registerBtn = document.createElement("button");
+    registerBtn.type = "button";
+    registerBtn.className = "secondary-btn";
+    registerBtn.textContent = "Register";
+    registerBtn.addEventListener("click", () => openRegistrationModal(event));
+    actions.appendChild(registerBtn);
+  }
 
-  if (isAdminPanelVisible()) {
+  if (adminView || isAdminPanelVisible()) {
     const editBtn = document.createElement("button");
     editBtn.type = "button";
     editBtn.className = "secondary-btn";
@@ -160,6 +258,11 @@ function renderEventCard(event) {
 }
 
 function openRegistrationModal(event) {
+  if (isPastEvent(event)) {
+    showMessage(mainMessage, "This event has already passed.", "error");
+    return;
+  }
+
   hideMessage(mainMessage);
   hideMessage(modalMessage);
   document.getElementById("modalEventTitle").textContent = event.name;
@@ -767,6 +870,243 @@ function resetPartnerForm() {
   hideMessage(adminMessage);
 }
 
+async function loadGallery() {
+  const galleryDiv = document.getElementById("gallery");
+  const adminGalleryDiv = document.getElementById("admin-gallery");
+
+  if (galleryDiv) {
+    galleryDiv.innerHTML =
+      "<p class='status-message status-loading'>Loading gallery...</p>";
+  }
+  if (adminGalleryDiv && !adminSection.classList.contains("hidden")) {
+    adminGalleryDiv.innerHTML =
+      "<p class='status-message status-loading'>Loading gallery entries...</p>";
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/api/gallery`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch gallery");
+    }
+
+    const galleryItems = await res.json();
+    const items = galleryItems.map((item) => ({
+      ...item,
+      images: normalizeGalleryImages(item.images),
+    }));
+
+    if (galleryDiv) {
+      galleryDiv.innerHTML = "";
+      if (!items.length) {
+        galleryDiv.innerHTML =
+          "<p class='status-message status-empty'>No gallery moments have been added yet.</p>";
+      } else {
+        items.forEach((item) => {
+          galleryDiv.appendChild(renderGalleryCard(item));
+        });
+      }
+    }
+
+    if (adminGalleryDiv) {
+      adminGalleryDiv.innerHTML = "";
+      if (adminSection && !adminSection.classList.contains("hidden")) {
+        if (!items.length) {
+          adminGalleryDiv.innerHTML =
+            "<p class='status-message status-empty'>No gallery entries yet.</p>";
+        } else {
+          items.forEach((item) => {
+            adminGalleryDiv.appendChild(
+              renderGalleryCard(item, { adminView: true }),
+            );
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error loading gallery:", err);
+    if (galleryDiv) {
+      galleryDiv.innerHTML =
+        "<p class='status-message status-error'>Unable to load gallery. Please try again later.</p>";
+    }
+    if (adminGalleryDiv && adminSection && !adminSection.classList.contains("hidden")) {
+      adminGalleryDiv.innerHTML =
+        "<p class='status-message status-error'>Unable to load gallery entries.</p>";
+    }
+  }
+}
+
+function renderGalleryCard(item, options = {}) {
+  const { adminView = false } = options;
+  const card = document.createElement("article");
+  card.className = "gallery-card";
+
+  const title = document.createElement("h3");
+  title.textContent = item.name;
+
+  const description = document.createElement("p");
+  description.textContent = item.description || "No description available.";
+  description.className = "gallery-description";
+
+  const mediaGrid = document.createElement("div");
+  mediaGrid.className = "gallery-media-grid";
+
+  const images = normalizeGalleryImages(item.images);
+  images.forEach((imageSrc, index) => {
+    const image = document.createElement("img");
+    image.src = resolveAssetUrl(imageSrc) || imageSrc;
+    image.alt = `${item.name} photo ${index + 1}`;
+    image.className = "gallery-image";
+    attachImagePreview(image, item.name);
+    mediaGrid.appendChild(image);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "button-row";
+
+  if (adminView) {
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "secondary-btn";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => fillGalleryForm(item));
+    actions.appendChild(editBtn);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "danger-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.addEventListener("click", () => deleteGalleryItem(item.id));
+    actions.appendChild(deleteBtn);
+  }
+
+  card.append(title, description, mediaGrid, actions);
+  return card;
+}
+
+function fillGalleryForm(item) {
+  currentEditGalleryId = item.id;
+  document.getElementById("galleryId").value = item.id;
+  document.getElementById("galleryName").value = item.name;
+  document.getElementById("galleryDate").value = item.date || "";
+  document.getElementById("galleryDescription").value = item.description || "";
+  document.getElementById("galleryImages").value = JSON.stringify(
+    normalizeGalleryImages(item.images),
+  );
+  document.getElementById("galleryImageFiles").value = "";
+  document.getElementById("cancelGalleryEdit").classList.remove("hidden");
+  showMessage(adminMessage, "Editing gallery entry. Update the fields and save.", "success");
+}
+
+function resetGalleryForm() {
+  currentEditGalleryId = null;
+  document.getElementById("galleryForm").reset();
+  document.getElementById("galleryId").value = "";
+  document.getElementById("galleryImages").value = "";
+  document.getElementById("galleryImageFiles").value = "";
+  document.getElementById("cancelGalleryEdit").classList.add("hidden");
+  hideMessage(adminMessage);
+}
+
+async function submitGalleryForm(event) {
+  event.preventDefault();
+  hideMessage(adminMessage);
+
+  try {
+    const name = document.getElementById("galleryName").value.trim();
+    const date = document.getElementById("galleryDate").value;
+    const description = document.getElementById("galleryDescription").value.trim();
+    const existingImages = normalizeGalleryImages(
+      document.getElementById("galleryImages").value,
+    );
+    const newFiles = document.getElementById("galleryImageFiles").files;
+
+    if (!name || !date) {
+      showMessage(adminMessage, "Event name and date are required.", "error");
+      return;
+    }
+
+    let images = existingImages;
+    if (newFiles && newFiles.length) {
+      images = existingImages.concat(
+        await uploadGalleryImages(Array.from(newFiles)),
+      );
+    }
+
+    if (!images.length) {
+      showMessage(
+        adminMessage,
+        "Please add at least one picture for the gallery entry.",
+        "error",
+      );
+      return;
+    }
+
+    const payload = { name, date, description, images };
+    const url = currentEditGalleryId
+      ? `${baseUrl}/api/gallery/${currentEditGalleryId}`
+      : `${baseUrl}/api/gallery`;
+    const method = currentEditGalleryId ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Unable to save gallery entry.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Gallery entry saved successfully.",
+      "success",
+    );
+    resetGalleryForm();
+    loadGallery();
+  } catch (err) {
+    console.error("Error saving gallery entry:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Failed to save gallery entry.",
+      "error",
+    );
+  }
+}
+
+async function deleteGalleryItem(galleryId) {
+  const confirmed = confirm("Delete this gallery entry? This cannot be undone.");
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/gallery/${galleryId}`, {
+      method: "DELETE",
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not delete gallery entry.");
+    }
+
+    showMessage(
+      adminMessage,
+      data.message || "Gallery entry removed successfully.",
+      "success",
+    );
+    if (String(currentEditGalleryId) === String(galleryId)) {
+      resetGalleryForm();
+    }
+    loadGallery();
+  } catch (err) {
+    console.error("Error deleting gallery entry:", err);
+    showMessage(
+      adminMessage,
+      err.message || "Unable to remove gallery entry.",
+      "error",
+    );
+  }
+}
+
 async function submitPartnerForm(e) {
   e.preventDefault();
   hideMessage(adminMessage);
@@ -1331,6 +1671,7 @@ async function exportRegistrations() {
 function hideAdminPanel() {
   setAdminMode(false);
   resetEventForm();
+  resetGalleryForm();
   resetProductForm();
   resetPartnerForm();
   hideMessage(adminMessage);
@@ -1415,6 +1756,8 @@ function initialize() {
   const cancelRegistration = document.getElementById("cancelRegistration");
   const eventForm = document.getElementById("eventForm");
   const cancelEdit = document.getElementById("cancelEdit");
+  const galleryForm = document.getElementById("galleryForm");
+  const cancelGalleryEdit = document.getElementById("cancelGalleryEdit");
   const refreshRegistrationsBtn = document.getElementById(
     "refreshRegistrations",
   );
@@ -1472,6 +1815,14 @@ function initialize() {
 
   if (cancelEdit) {
     cancelEdit.addEventListener("click", resetEventForm);
+  }
+
+  if (galleryForm) {
+    galleryForm.addEventListener("submit", submitGalleryForm);
+  }
+
+  if (cancelGalleryEdit) {
+    cancelGalleryEdit.addEventListener("click", resetGalleryForm);
   }
 
   if (refreshRegistrationsBtn) {
@@ -1541,11 +1892,7 @@ function initialize() {
   document
     .querySelectorAll("img[data-preview-title]")
     .forEach((image) => {
-      attachImagePreview(
-        image,
-        image.dataset.previewTitle,
-        image.dataset.previewSubtitle || "",
-      );
+      attachImagePreview(image, image.dataset.previewTitle);
     });
 
   document.addEventListener("keydown", (event) => {
@@ -1559,6 +1906,7 @@ function initialize() {
   });
 
   loadEvents();
+  loadGallery();
   loadProducts(false);
   loadPartners(false);
   checkAdminSession();

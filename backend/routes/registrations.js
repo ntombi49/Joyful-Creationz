@@ -3,6 +3,23 @@ const router = express.Router();
 const db = require("../db");
 const { requireAdmin } = require("../middleware/adminAuth");
 
+function parseEventDateTime(event) {
+  const date = String(event.date || "").trim();
+  const time = String(event.time || "").trim() || "00:00";
+
+  if (!date) return null;
+
+  const parsed = new Date(`${date}T${time}:00`);
+  if (Number.isNaN(parsed.valueOf())) return null;
+  return parsed;
+}
+
+function isPastEvent(event) {
+  const eventDateTime = parseEventDateTime(event);
+  if (!eventDateTime) return false;
+  return eventDateTime.getTime() < Date.now();
+}
+
 function validateRegistrationInput(req, res, next) {
   const { event_id, name, email, phone } = req.body;
   const numericEventId = Number(event_id);
@@ -20,10 +37,13 @@ function validateRegistrationInput(req, res, next) {
     return res.status(400).json({ message: "Phone number is required." });
   }
 
-  db.get("SELECT id FROM events WHERE id = ?", [numericEventId], (err, row) => {
+  db.get("SELECT id, date, time FROM events WHERE id = ?", [numericEventId], (err, row) => {
     if (err) return res.status(500).json({ message: "Unable to validate event." });
     if (!row) {
       return res.status(400).json({ message: "Selected event does not exist." });
+    }
+    if (isPastEvent(row)) {
+      return res.status(400).json({ message: "Registration has closed for this event." });
     }
     req.body.event_id = numericEventId;
     next();

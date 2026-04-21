@@ -3,6 +3,23 @@ const router = express.Router();
 const db = require("../db");
 const { requireAdmin } = require("../middleware/adminAuth");
 
+function parseEventDateTime(event) {
+  const date = String(event.date || "").trim();
+  const time = String(event.time || "").trim() || "00:00";
+
+  if (!date) return null;
+
+  const parsed = new Date(`${date}T${time}:00`);
+  if (Number.isNaN(parsed.valueOf())) return null;
+  return parsed;
+}
+
+function getEventStatus(event) {
+  const eventDateTime = parseEventDateTime(event);
+  if (!eventDateTime) return "upcoming";
+  return eventDateTime.getTime() < Date.now() ? "past" : "upcoming";
+}
+
 function validateEventInput(req, res, next) {
   const { name, date, time, location } = req.body;
 
@@ -23,9 +40,9 @@ function validateEventInput(req, res, next) {
 }
 
 router.get("/", (req, res) => {
-  db.all("SELECT * FROM events ORDER BY date ASC", [], (err, rows) => {
+  db.all("SELECT * FROM events ORDER BY date ASC, time ASC", [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
+    res.json(rows.map((row) => ({ ...row, status: getEventStatus(row) })));
   });
 });
 
