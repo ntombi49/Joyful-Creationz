@@ -74,6 +74,8 @@ const registrationModal = document.getElementById("registrationModal");
 const orderModal = document.getElementById("orderModal");
 const imageViewerModal = document.getElementById("imageViewerModal");
 const imageViewerImg = document.getElementById("imageViewerImg");
+const headerMenu = document.getElementById("headerMenu");
+const menuToggleButton = document.getElementById("menuToggle");
 
 function isAdminPanelVisible() {
   return Boolean(adminAuthenticated && adminSection && !adminSection.classList.contains("hidden"));
@@ -93,6 +95,30 @@ function updateAdminControls() {
 
   if (adminLogoutButton) {
     adminLogoutButton.classList.toggle("hidden", !adminAuthenticated);
+  }
+}
+
+function openHeaderMenu() {
+  if (!headerMenu || !menuToggleButton) return;
+  headerMenu.classList.remove("hidden");
+  menuToggleButton.setAttribute("aria-expanded", "true");
+  menuToggleButton.setAttribute("aria-label", "Close navigation menu");
+}
+
+function closeHeaderMenu() {
+  if (!headerMenu || !menuToggleButton) return;
+  headerMenu.classList.add("hidden");
+  menuToggleButton.setAttribute("aria-expanded", "false");
+  menuToggleButton.setAttribute("aria-label", "Open navigation menu");
+}
+
+function toggleHeaderMenu() {
+  if (!headerMenu || !menuToggleButton) return;
+  const isHidden = headerMenu.classList.contains("hidden");
+  if (isHidden) {
+    openHeaderMenu();
+  } else {
+    closeHeaderMenu();
   }
 }
 
@@ -1839,6 +1865,18 @@ function initialize() {
     });
   }
 
+  if (menuToggleButton) {
+    menuToggleButton.addEventListener("click", toggleHeaderMenu);
+  }
+
+  if (headerMenu) {
+    headerMenu.addEventListener("click", (event) => {
+      if (event.target.closest("a")) {
+        closeHeaderMenu();
+      }
+    });
+  }
+
   if (adminLoginFormElement) {
     adminLoginFormElement.addEventListener("submit", submitAdminLogin);
   }
@@ -1957,6 +1995,20 @@ function initialize() {
     ) {
       closeImageViewer();
     }
+
+    if (event.key === "Escape") {
+      closeHeaderMenu();
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!headerMenu || !menuToggleButton) return;
+    if (headerMenu.classList.contains("hidden")) return;
+    if (headerMenu.contains(event.target) || menuToggleButton.contains(event.target)) {
+      return;
+    }
+
+    closeHeaderMenu();
   });
 
   loadEvents();

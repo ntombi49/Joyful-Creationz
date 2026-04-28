@@ -16,8 +16,12 @@
     <div class="page-shell">
       <header class="site-header">
         <div class="site-brand">
+          <img
+            class="brand-logo"
+            src="/images/mummys-club-logo.jpeg"
+            alt="Mummy's Club logo"
+          />
           <div class="brand-lockup">
-            <p class="brand-wordmark">Mummy's Club</p>
             <h1>
               A movement for mummies who need support, connection, and a
               softer journey through motherhood.
@@ -32,12 +36,29 @@
           </div>
         </div>
 
-        <nav class="site-nav" aria-label="Primary navigation">
-          <a href="#events-section">Events</a>
-          <a href="#gallery-section">Gallery</a>
-          <a href="#products-section">Products</a>
-          <a href="#partners-section">Partners</a>
-        </nav>
+        <div class="header-actions">
+          <button
+            id="menuToggle"
+            class="menu-toggle"
+            type="button"
+            aria-label="Open navigation menu"
+            aria-expanded="false"
+            aria-controls="headerMenu"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <nav
+            id="headerMenu"
+            class="header-menu hidden"
+            aria-label="Primary navigation"
+          >
+            <a href="#contact-section">Contact us</a>
+            <a href="#events-section">Events</a>
+            <a href="#partners-section">Partners</a>
+          </nav>
+        </div>
       </header>
 
       <section class="hero-panel">
@@ -516,7 +537,7 @@
                 </a>
               </div>
             </div>
-            <div>
+            <div id="contact-section">
               <h3>Contact</h3>
               <p class="panel-subtitle">
                 <strong>Business number:</strong> +27753958233
